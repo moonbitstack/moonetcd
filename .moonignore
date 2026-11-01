@@ -1,0 +1,6 @@
+# `.gitignore` keeps `!.git*` so that .gitignore, .github and .gitattributes stay
+# tracked; that same negation would otherwise pull the whole `.git` directory —
+# object database included — into the published tarball.
+.git/
+_build/
+target/

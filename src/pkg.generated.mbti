@@ -1,0 +1,13 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "moonbitstack/CHANGE-ME"
+
+// Values
+pub fn greet(StringView) -> String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,6 @@
+// The executable. Delete `src/cmd/` in a repository that ships no binary.
+pkgtype(kind: "executable")
+
+import {
+  "moonbitstack/CHANGE-ME",
+}

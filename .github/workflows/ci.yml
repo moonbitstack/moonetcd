@@ -1,0 +1,63 @@
+name: Check and Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        os: [ubuntu-26.04, macos-26, windows-2025]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: install-unix
+        if: ${{ runner.os != 'Windows' }}
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+
+      - name: install-windows
+        if: ${{ runner.os == 'Windows' }}
+        run: |
+          Set-ExecutionPolicy RemoteSigned -Scope CurrentUser; irm https://cli.moonbitlang.com/install/powershell.ps1 | iex
+          "C:\Users\runneradmin\.moon\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: post install
+        run: |
+          moon version --all
+          moon update
+
+      - name: moon check
+        run: moon check --target all --deny-warn
+
+      - name: moon build
+        run: moon build --target all
+
+      - name: moon test (all backends)
+        run: moon test --target all
+
+      - name: examples run
+        if: runner.os == 'Linux'
+        run: |
+          for dir in src/examples/*/; do
+            if grep -q 'kind: "executable"' "$dir/moon.pkg" && ! grep -q 'supported_targets = "js"' "$dir/moon.pkg"; then
+              moon run "$dir" --target native > /dev/null
+            fi
+          done
+
+      - name: lint (fmt is clean)
+        run: |
+          moon fmt && git diff --exit-code
+
+      - name: interfaces are up to date
+        run: |
+          moon info --target all && git diff --exit-code
