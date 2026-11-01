@@ -1,0 +1,11 @@
+// Integration tests against a real etcd. The CI starts etcd before running these;
+// without one they skip (the connect check fails fast and the test returns). Every
+// test uses its own key prefix so runs do not collide.
+
+supported_targets = "native"
+
+import {
+  "moonbitstack/moonetcd",
+  "moonbitstack/moonetcd/client",
+  "moonbitlang/async",
+} for "test"

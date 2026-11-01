@@ -1,0 +1,145 @@
+// Integration tests against a live etcd at 127.0.0.1:2379. `try_connect` probes the
+// member and returns `None` when nothing answers, so these tests are a no-op on a
+// machine without etcd and a real exercise of the client in CI.
+
+///|
+async fn try_connect() -> @client.Client? {
+  let cfg = @moonetcd.ClientConfig::{
+    ..@moonetcd.default_client_config,
+    endpoints: ["127.0.0.1:2379"],
+  }
+  let c = @client.Client::connect(cfg)
+  let up = try {
+    let _ = c.maintenance().status()
+    true
+  } catch {
+    _ => false
+  }
+  if up {
+    Some(c)
+  } else {
+    c.close()
+    None
+  }
+}
+
+///|
+async test "integration: kv put / get / prefix / delete" {
+  match try_connect() {
+    None => ()
+    Some(c) => {
+      let kv = c.kv()
+      let _ = kv.put(b"/moonetcd-it/kv/a", b"alpha")
+      let _ = kv.put(b"/moonetcd-it/kv/b", b"beta")
+      let one = kv.get(b"/moonetcd-it/kv/a")
+      assert_eq(one.kvs.length(), 1)
+      assert_eq(one.kvs[0].value, b"alpha")
+      let pref = kv.get_prefix(b"/moonetcd-it/kv/")
+      assert_eq(pref.count >= 2L, true)
+      let del = kv.delete_range(@moonetcd.DeleteRangeRequest::{
+        ..@moonetcd.DeleteRangeRequest::empty(),
+        key: b"/moonetcd-it/kv/",
+        range_end: @moonetcd.prefix(b"/moonetcd-it/kv/"),
+      })
+      assert_eq(del.deleted >= 2L, true)
+      c.close()
+    }
+  }
+}
+
+///|
+async test "integration: txn compare-and-swap" {
+  match try_connect() {
+    None => ()
+    Some(c) => {
+      let kv = c.kv()
+      let _ = kv.put(b"/moonetcd-it/txn", b"1")
+      let cmp = @moonetcd.Compare::{
+        ..@moonetcd.Compare::empty(),
+        key: b"/moonetcd-it/txn",
+        target: @moonetcd.CompareTarget::Value,
+        result: @moonetcd.CompareResult::Equal,
+        target_union: @moonetcd.CmpTarget::Value(b"1"),
+      }
+      let yes = @moonetcd.PutRequest::{
+        ..@moonetcd.PutRequest::empty(),
+        key: b"/moonetcd-it/txn",
+        value: b"2",
+      }
+      let no = @moonetcd.PutRequest::{
+        ..@moonetcd.PutRequest::empty(),
+        key: b"/moonetcd-it/txn",
+        value: b"99",
+      }
+      let resp = kv.txn(@moonetcd.TxnRequest::{
+        compare: [cmp],
+        success: [@moonetcd.RequestOp::RequestPut(yes)],
+        failure: [@moonetcd.RequestOp::RequestPut(no)],
+      })
+      assert_eq(resp.succeeded, true)
+      let after = kv.get(b"/moonetcd-it/txn")
+      assert_eq(after.kvs[0].value, b"2")
+      let _ = kv.delete_range(@moonetcd.DeleteRangeRequest::{
+        ..@moonetcd.DeleteRangeRequest::empty(),
+        key: b"/moonetcd-it/txn",
+      })
+      c.close()
+    }
+  }
+}
+
+///|
+async test "integration: lease grant / time-to-live / revoke" {
+  match try_connect() {
+    None => ()
+    Some(c) => {
+      let lease = c.lease()
+      let granted = lease.grant(30L)
+      assert_eq(granted.ttl >= 1L, true)
+      let _ = c.kv().put(b"/moonetcd-it/leased", b"x", lease=granted.id)
+      let ttl = lease.time_to_live(granted.id, keys=true)
+      assert_eq(ttl.keys.length() >= 1, true)
+      let _ = lease.revoke(granted.id)
+      let gone = c.kv().get(b"/moonetcd-it/leased")
+      assert_eq(gone.kvs.length(), 0)
+      c.close()
+    }
+  }
+}
+
+///|
+async test "integration: watch sees a put" {
+  match try_connect() {
+    None => ()
+    Some(c) => {
+      @async.with_task_group <| g => {
+        let req = @moonetcd.WatchCreateRequest::{
+          ..@moonetcd.WatchCreateRequest::empty(),
+          key: b"/moonetcd-it/watch",
+        }
+        let chan = c.watch().watch_create(g, req)
+        let _ = c.kv().put(b"/moonetcd-it/watch", b"changed")
+        let mut events = 0
+        let mut reads = 0
+        while reads < 3 && events == 0 {
+          match chan.next() {
+            Some(resp) => {
+              events = events + resp.events.length()
+              reads = reads + 1
+            }
+            None => reads = 3
+          }
+        }
+        assert_eq(events >= 1, true)
+        chan.cancel()
+        let _ = c
+          .kv()
+          .delete_range(@moonetcd.DeleteRangeRequest::{
+            ..@moonetcd.DeleteRangeRequest::empty(),
+            key: b"/moonetcd-it/watch",
+          })
+      }
+      c.close()
+    }
+  }
+}

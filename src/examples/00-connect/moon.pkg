@@ -1,0 +1,9 @@
+supported_targets = "native"
+
+import {
+  "moonbitstack/moonetcd",
+  "moonbitstack/moonetcd/client",
+  "moonbitlang/async",
+}
+
+pkgtype(kind: "executable")

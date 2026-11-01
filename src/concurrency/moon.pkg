@@ -1,0 +1,12 @@
+// moonetcd/concurrency: the client-side helpers clientv3 calls `concurrency` — a
+// lease-backed `Session`, a distributed `Mutex` over v3lock, and an `Election` over
+// v3election. They own no transport of their own; each borrows a `Client`.
+//
+// Native only: it builds on the native client transport.
+supported_targets = "native"
+
+import {
+  "moonbitstack/moonetcd",
+  "moonbitstack/moonetcd/client",
+  "moonbitlang/async",
+}

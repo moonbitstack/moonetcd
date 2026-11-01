@@ -1,0 +1,20 @@
+// moonetcd/client: the native gRPC transport. One `Client` dials one or more
+// etcd endpoints (multi-endpoint failover via the net ManagedChannel for unary
+// and server/client streaming) and owns a multiplexed channel per bidi session
+// (Watch, Lease KeepAlive) so the stream can reconnect from the last revision.
+//
+// Native only: the transport opens real TCP connections.
+supported_targets = "native"
+
+import {
+  "moonbitstack/moonrpc/net",
+  "moonbitstack/moonrpc/wire",
+  "moonbitstack/moonrpc/proto",
+  "moonbitstack/moonhttp/header",
+  "moonbitstack/moonetcd",
+  "moonbitlang/async",
+}
+
+import {
+  "moonbitstack/moonetcd",
+} for "wbtest"

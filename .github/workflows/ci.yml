@@ -1,63 +1,131 @@
-name: Check and Test
+name: CI
 
 on:
-  pull_request:
   push:
-    branches:
-      - master
+    branches: [ master, main ]
+  pull_request:
 
 jobs:
-  build:
-    permissions:
-      contents: read
+  # The gate: format, check every target with warnings denied, build, test, and
+  # confirm the public interface is stable (`moon info` leaves no diff).
+  gate:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-26.04, macos-26, windows-2025]
+        os: [ ubuntu-latest, macos-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
-        with:
-          persist-credentials: false
-
-      - name: install-unix
-        if: ${{ runner.os != 'Windows' }}
+      - uses: actions/checkout@v4
+      - name: Install MoonBit
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
-          echo "$HOME/.moon/bin" >> $GITHUB_PATH
-
-      - name: install-windows
-        if: ${{ runner.os == 'Windows' }}
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: MoonBit version
+        run: moon version
+      - name: Format
         run: |
-          Set-ExecutionPolicy RemoteSigned -Scope CurrentUser; irm https://cli.moonbitlang.com/install/powershell.ps1 | iex
-          "C:\Users\runneradmin\.moon\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-
-      - name: post install
-        run: |
-          moon version --all
-          moon update
-
-      - name: moon check
+          moon fmt
+          git diff --exit-code
+      - name: Check (all targets, warnings denied)
         run: moon check --target all --deny-warn
-
-      - name: moon build
+      - name: Build (all targets)
         run: moon build --target all
-
-      - name: moon test (all backends)
+      - name: Test (all targets)
         run: moon test --target all
-
-      - name: examples run
-        if: runner.os == 'Linux'
+      - name: Interface
         run: |
-          for dir in src/examples/*/; do
-            if grep -q 'kind: "executable"' "$dir/moon.pkg" && ! grep -q 'supported_targets = "js"' "$dir/moon.pkg"; then
-              moon run "$dir" --target native > /dev/null
-            fi
+          moon info --target all
+          git diff --exit-code
+
+  # Integration: a real etcd, first as a single node, then as a three-node cluster,
+  # with the client tests and every example driven against 127.0.0.1:2379.
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Install etcd
+        run: |
+          ETCD_VERSION=v3.5.16
+          ARCH=linux-amd64
+          curl -fsSL "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-${ARCH}.tar.gz" -o /tmp/etcd.tar.gz
+          tar -xzf /tmp/etcd.tar.gz -C /tmp
+          sudo install "/tmp/etcd-${ETCD_VERSION}-${ARCH}/etcd" /usr/local/bin/etcd
+          sudo install "/tmp/etcd-${ETCD_VERSION}-${ARCH}/etcdctl" /usr/local/bin/etcdctl
+          etcd --version
+          etcdctl version
+
+      - name: Single-node etcd
+        run: |
+          mkdir -p /tmp/etcd-single
+          nohup etcd --data-dir /tmp/etcd-single \
+            --listen-client-urls http://127.0.0.1:2379 \
+            --advertise-client-urls http://127.0.0.1:2379 \
+            > /tmp/etcd-single.log 2>&1 &
+          for _ in $(seq 1 30); do
+            if etcdctl --endpoints=http://127.0.0.1:2379 endpoint health; then break; fi
+            sleep 1
+          done
+          etcdctl --endpoints=http://127.0.0.1:2379 endpoint health
+
+      - name: Integration tests (single node)
+        run: moon test --target native
+
+      - name: Examples (single node)
+        run: |
+          for ex in 00-connect 01-kv 02-watch 03-lease 04-txn 05-lock; do
+            echo "== $ex =="
+            moon run "src/examples/$ex"
           done
 
-      - name: lint (fmt is clean)
+      - name: Stop single node
         run: |
-          moon fmt && git diff --exit-code
+          pkill -f 'etcd-single' || true
+          sleep 2
 
-      - name: interfaces are up to date
+      - name: Three-node etcd cluster
         run: |
-          moon info --target all && git diff --exit-code
+          for n in 1 2 3; do mkdir -p "/tmp/etcd-n$n"; done
+          # m1 keeps the default client port (2379) so the tests and examples reach it.
+          nohup etcd --name m1 --data-dir /tmp/etcd-n1 \
+            --listen-client-urls http://127.0.0.1:2379 --advertise-client-urls http://127.0.0.1:2379 \
+            --listen-peer-urls http://127.0.0.1:2380 --initial-advertise-peer-urls http://127.0.0.1:2380 \
+            --initial-cluster 'm1=http://127.0.0.1:2380,m2=http://127.0.0.1:22382,m3=http://127.0.0.1:22384' \
+            --initial-cluster-token moonetcd-ci --initial-cluster-state new \
+            > /tmp/etcd-n1.log 2>&1 &
+          nohup etcd --name m2 --data-dir /tmp/etcd-n2 \
+            --listen-client-urls http://127.0.0.1:22381 --advertise-client-urls http://127.0.0.1:22381 \
+            --listen-peer-urls http://127.0.0.1:22382 --initial-advertise-peer-urls http://127.0.0.1:22382 \
+            --initial-cluster 'm1=http://127.0.0.1:2380,m2=http://127.0.0.1:22382,m3=http://127.0.0.1:22384' \
+            --initial-cluster-token moonetcd-ci --initial-cluster-state new \
+            > /tmp/etcd-n2.log 2>&1 &
+          nohup etcd --name m3 --data-dir /tmp/etcd-n3 \
+            --listen-client-urls http://127.0.0.1:22383 --advertise-client-urls http://127.0.0.1:22383 \
+            --listen-peer-urls http://127.0.0.1:22384 --initial-advertise-peer-urls http://127.0.0.1:22384 \
+            --initial-cluster 'm1=http://127.0.0.1:2380,m2=http://127.0.0.1:22382,m3=http://127.0.0.1:22384' \
+            --initial-cluster-token moonetcd-ci --initial-cluster-state new \
+            > /tmp/etcd-n3.log 2>&1 &
+          for _ in $(seq 1 45); do
+            if etcdctl --endpoints=http://127.0.0.1:2379 endpoint health; then break; fi
+            sleep 1
+          done
+          etcdctl --endpoints=http://127.0.0.1:2379 member list
+
+      - name: Three members are up
+        run: |
+          members=$(etcdctl --endpoints=http://127.0.0.1:2379 member list --write-out=json | grep -o '"name"' | wc -l)
+          echo "members: $members"
+          test "$members" -eq 3
+
+      - name: Integration tests (three-node cluster)
+        run: moon test --target native
+
+      - name: Cluster dump on failure
+        if: failure()
+        run: |
+          echo "== m1 =="; tail -50 /tmp/etcd-n1.log || true
+          echo "== m2 =="; tail -50 /tmp/etcd-n2.log || true
+          echo "== m3 =="; tail -50 /tmp/etcd-n3.log || true

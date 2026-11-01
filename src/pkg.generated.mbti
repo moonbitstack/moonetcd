@@ -1,12 +1,1208 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "moonbitstack/moonetcd"
 
+import {
+  "moonbitstack/moonrpc/proto",
+}
+
 // Values
-pub fn greet(StringView) -> String
+pub let default_client_config : ClientConfig
+
+pub let default_tls : TlsConfig
+
+pub fn exact(Bytes) -> (Bytes, Bytes)
+
+pub fn has_prefix(Bytes, Bytes) -> Bool
+
+pub fn prefix(Bytes) -> Bytes
+
+pub fn prefix_range(Bytes) -> (Bytes, Bytes)
 
 // Errors
+pub(all) suberror EtcdError {
+  Refused(Status)
+  Compacted(Int64)
+  FutureRev(Int64)
+}
+pub fn EtcdError::message(Self) -> String
+pub fn EtcdError::output(Self, &Logger) -> Unit
+pub fn EtcdError::to_string(Self) -> String
+pub impl Show for EtcdError
 
 // Types and methods
+pub(all) struct Alarm {
+  member_id : UInt64
+  alarm : AlarmType
+} derive(Eq)
+pub fn Alarm::decode(Bytes) -> Self raise @proto.PbError
+pub fn Alarm::empty() -> Self
+pub fn Alarm::encode(Self) -> Bytes
+pub fn Alarm::equal(Self, Self) -> Bool
+pub fn Alarm::not_equal(Self, Self) -> Bool
+
+pub(all) enum AlarmAction {
+  Get
+  Activate
+  Deactivate
+} derive(Eq)
+pub fn AlarmAction::equal(Self, Self) -> Bool
+pub fn AlarmAction::from_int(Int32) -> Self
+pub fn AlarmAction::not_equal(Self, Self) -> Bool
+pub fn AlarmAction::to_int(Self) -> Int32
+
+pub(all) struct AlarmRequest {
+  action : AlarmAction
+  member_id : UInt64
+  alarm : AlarmType
+} derive(Eq)
+pub fn AlarmRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AlarmRequest::empty() -> Self
+pub fn AlarmRequest::encode(Self) -> Bytes
+pub fn AlarmRequest::equal(Self, Self) -> Bool
+pub fn AlarmRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AlarmResponse {
+  header : ResponseHeader
+  alarm : Alarm
+} derive(Eq)
+pub fn AlarmResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AlarmResponse::empty() -> Self
+pub fn AlarmResponse::encode(Self) -> Bytes
+pub fn AlarmResponse::equal(Self, Self) -> Bool
+pub fn AlarmResponse::not_equal(Self, Self) -> Bool
+
+pub(all) enum AlarmType {
+  None
+  Nospace
+  Corrupt
+} derive(Eq)
+pub fn AlarmType::equal(Self, Self) -> Bool
+pub fn AlarmType::from_int(Int32) -> Self
+pub fn AlarmType::not_equal(Self, Self) -> Bool
+pub fn AlarmType::to_int(Self) -> Int32
+
+pub(all) struct AuthDisableResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn AuthDisableResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthDisableResponse::empty() -> Self
+pub fn AuthDisableResponse::encode(Self) -> Bytes
+pub fn AuthDisableResponse::equal(Self, Self) -> Bool
+pub fn AuthDisableResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthEnableResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn AuthEnableResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthEnableResponse::empty() -> Self
+pub fn AuthEnableResponse::encode(Self) -> Bytes
+pub fn AuthEnableResponse::equal(Self, Self) -> Bool
+pub fn AuthEnableResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthRoleAddRequest {
+  name : String
+} derive(Eq)
+pub fn AuthRoleAddRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthRoleAddRequest::empty() -> Self
+pub fn AuthRoleAddRequest::encode(Self) -> Bytes
+pub fn AuthRoleAddRequest::equal(Self, Self) -> Bool
+pub fn AuthRoleAddRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthRoleAddResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn AuthRoleAddResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthRoleAddResponse::empty() -> Self
+pub fn AuthRoleAddResponse::encode(Self) -> Bytes
+pub fn AuthRoleAddResponse::equal(Self, Self) -> Bool
+pub fn AuthRoleAddResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthRoleDeleteRequest {
+  role : String
+} derive(Eq)
+pub fn AuthRoleDeleteRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthRoleDeleteRequest::empty() -> Self
+pub fn AuthRoleDeleteRequest::encode(Self) -> Bytes
+pub fn AuthRoleDeleteRequest::equal(Self, Self) -> Bool
+pub fn AuthRoleDeleteRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthRoleDeleteResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn AuthRoleDeleteResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthRoleDeleteResponse::empty() -> Self
+pub fn AuthRoleDeleteResponse::encode(Self) -> Bytes
+pub fn AuthRoleDeleteResponse::equal(Self, Self) -> Bool
+pub fn AuthRoleDeleteResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthRoleGetRequest {
+  role : String
+} derive(Eq)
+pub fn AuthRoleGetRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthRoleGetRequest::empty() -> Self
+pub fn AuthRoleGetRequest::encode(Self) -> Bytes
+pub fn AuthRoleGetRequest::equal(Self, Self) -> Bool
+pub fn AuthRoleGetRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthRoleGetResponse {
+  header : ResponseHeader
+  perm : Array[Permission]
+} derive(Eq)
+pub fn AuthRoleGetResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthRoleGetResponse::empty() -> Self
+pub fn AuthRoleGetResponse::encode(Self) -> Bytes
+pub fn AuthRoleGetResponse::equal(Self, Self) -> Bool
+pub fn AuthRoleGetResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthRoleGrantPermissionRequest {
+  name : String
+  perm : Permission
+} derive(Eq)
+pub fn AuthRoleGrantPermissionRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthRoleGrantPermissionRequest::empty() -> Self
+pub fn AuthRoleGrantPermissionRequest::encode(Self) -> Bytes
+pub fn AuthRoleGrantPermissionRequest::equal(Self, Self) -> Bool
+pub fn AuthRoleGrantPermissionRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthRoleGrantPermissionResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn AuthRoleGrantPermissionResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthRoleGrantPermissionResponse::empty() -> Self
+pub fn AuthRoleGrantPermissionResponse::encode(Self) -> Bytes
+pub fn AuthRoleGrantPermissionResponse::equal(Self, Self) -> Bool
+pub fn AuthRoleGrantPermissionResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthRoleListResponse {
+  header : ResponseHeader
+  roles : Array[String]
+} derive(Eq)
+pub fn AuthRoleListResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthRoleListResponse::empty() -> Self
+pub fn AuthRoleListResponse::encode(Self) -> Bytes
+pub fn AuthRoleListResponse::equal(Self, Self) -> Bool
+pub fn AuthRoleListResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthRoleRevokePermissionRequest {
+  role : String
+  key : Bytes
+  range_end : Bytes
+} derive(Eq)
+pub fn AuthRoleRevokePermissionRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthRoleRevokePermissionRequest::empty() -> Self
+pub fn AuthRoleRevokePermissionRequest::encode(Self) -> Bytes
+pub fn AuthRoleRevokePermissionRequest::equal(Self, Self) -> Bool
+pub fn AuthRoleRevokePermissionRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthRoleRevokePermissionResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn AuthRoleRevokePermissionResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthRoleRevokePermissionResponse::empty() -> Self
+pub fn AuthRoleRevokePermissionResponse::encode(Self) -> Bytes
+pub fn AuthRoleRevokePermissionResponse::equal(Self, Self) -> Bool
+pub fn AuthRoleRevokePermissionResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthStatusResponse {
+  header : ResponseHeader
+  enabled : Bool
+  auth_revision : Int64
+} derive(Eq)
+pub fn AuthStatusResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthStatusResponse::empty() -> Self
+pub fn AuthStatusResponse::encode(Self) -> Bytes
+pub fn AuthStatusResponse::equal(Self, Self) -> Bool
+pub fn AuthStatusResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserAddRequest {
+  name : String
+  password : String
+  options : UserAddOptions
+} derive(Eq)
+pub fn AuthUserAddRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserAddRequest::empty() -> Self
+pub fn AuthUserAddRequest::encode(Self) -> Bytes
+pub fn AuthUserAddRequest::equal(Self, Self) -> Bool
+pub fn AuthUserAddRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserAddResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn AuthUserAddResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserAddResponse::empty() -> Self
+pub fn AuthUserAddResponse::encode(Self) -> Bytes
+pub fn AuthUserAddResponse::equal(Self, Self) -> Bool
+pub fn AuthUserAddResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserChangePasswordRequest {
+  name : String
+  password : String
+} derive(Eq)
+pub fn AuthUserChangePasswordRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserChangePasswordRequest::empty() -> Self
+pub fn AuthUserChangePasswordRequest::encode(Self) -> Bytes
+pub fn AuthUserChangePasswordRequest::equal(Self, Self) -> Bool
+pub fn AuthUserChangePasswordRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserChangePasswordResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn AuthUserChangePasswordResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserChangePasswordResponse::empty() -> Self
+pub fn AuthUserChangePasswordResponse::encode(Self) -> Bytes
+pub fn AuthUserChangePasswordResponse::equal(Self, Self) -> Bool
+pub fn AuthUserChangePasswordResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserDeleteRequest {
+  name : String
+} derive(Eq)
+pub fn AuthUserDeleteRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserDeleteRequest::empty() -> Self
+pub fn AuthUserDeleteRequest::encode(Self) -> Bytes
+pub fn AuthUserDeleteRequest::equal(Self, Self) -> Bool
+pub fn AuthUserDeleteRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserDeleteResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn AuthUserDeleteResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserDeleteResponse::empty() -> Self
+pub fn AuthUserDeleteResponse::encode(Self) -> Bytes
+pub fn AuthUserDeleteResponse::equal(Self, Self) -> Bool
+pub fn AuthUserDeleteResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserGetRequest {
+  name : String
+} derive(Eq)
+pub fn AuthUserGetRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserGetRequest::empty() -> Self
+pub fn AuthUserGetRequest::encode(Self) -> Bytes
+pub fn AuthUserGetRequest::equal(Self, Self) -> Bool
+pub fn AuthUserGetRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserGetResponse {
+  header : ResponseHeader
+  roles : Array[String]
+} derive(Eq)
+pub fn AuthUserGetResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserGetResponse::empty() -> Self
+pub fn AuthUserGetResponse::encode(Self) -> Bytes
+pub fn AuthUserGetResponse::equal(Self, Self) -> Bool
+pub fn AuthUserGetResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserGrantRoleRequest {
+  user : String
+  role : String
+} derive(Eq)
+pub fn AuthUserGrantRoleRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserGrantRoleRequest::empty() -> Self
+pub fn AuthUserGrantRoleRequest::encode(Self) -> Bytes
+pub fn AuthUserGrantRoleRequest::equal(Self, Self) -> Bool
+pub fn AuthUserGrantRoleRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserGrantRoleResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn AuthUserGrantRoleResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserGrantRoleResponse::empty() -> Self
+pub fn AuthUserGrantRoleResponse::encode(Self) -> Bytes
+pub fn AuthUserGrantRoleResponse::equal(Self, Self) -> Bool
+pub fn AuthUserGrantRoleResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserListResponse {
+  header : ResponseHeader
+  users : Array[String]
+} derive(Eq)
+pub fn AuthUserListResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserListResponse::empty() -> Self
+pub fn AuthUserListResponse::encode(Self) -> Bytes
+pub fn AuthUserListResponse::equal(Self, Self) -> Bool
+pub fn AuthUserListResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserRevokeRoleRequest {
+  name : String
+  role : String
+} derive(Eq)
+pub fn AuthUserRevokeRoleRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserRevokeRoleRequest::empty() -> Self
+pub fn AuthUserRevokeRoleRequest::encode(Self) -> Bytes
+pub fn AuthUserRevokeRoleRequest::equal(Self, Self) -> Bool
+pub fn AuthUserRevokeRoleRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthUserRevokeRoleResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn AuthUserRevokeRoleResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthUserRevokeRoleResponse::empty() -> Self
+pub fn AuthUserRevokeRoleResponse::encode(Self) -> Bytes
+pub fn AuthUserRevokeRoleResponse::equal(Self, Self) -> Bool
+pub fn AuthUserRevokeRoleResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthenticateRequest {
+  name : String
+  password : String
+} derive(Eq)
+pub fn AuthenticateRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthenticateRequest::empty() -> Self
+pub fn AuthenticateRequest::encode(Self) -> Bytes
+pub fn AuthenticateRequest::equal(Self, Self) -> Bool
+pub fn AuthenticateRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct AuthenticateResponse {
+  header : ResponseHeader
+  token : String
+} derive(Eq)
+pub fn AuthenticateResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn AuthenticateResponse::empty() -> Self
+pub fn AuthenticateResponse::encode(Self) -> Bytes
+pub fn AuthenticateResponse::equal(Self, Self) -> Bool
+pub fn AuthenticateResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct CampaignRequest {
+  name : Bytes
+  value : Bytes
+  lease : Int64
+} derive(Eq)
+pub fn CampaignRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn CampaignRequest::empty() -> Self
+pub fn CampaignRequest::encode(Self) -> Bytes
+pub fn CampaignRequest::equal(Self, Self) -> Bool
+pub fn CampaignRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct CampaignResponse {
+  header : ResponseHeader
+  leader : LeaderKey
+} derive(Eq)
+pub fn CampaignResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn CampaignResponse::empty() -> Self
+pub fn CampaignResponse::encode(Self) -> Bytes
+pub fn CampaignResponse::equal(Self, Self) -> Bool
+pub fn CampaignResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct ClientConfig {
+  endpoints : Array[String]
+  username : String
+  password : String
+  token : String
+  dial_timeout_millis : Int32
+  keep_alive_millis : Int32
+  tls : TlsConfig
+} derive(Eq)
+pub fn ClientConfig::equal(Self, Self) -> Bool
+pub fn ClientConfig::not_equal(Self, Self) -> Bool
+
+pub(all) enum CmpTarget {
+  Version(Int64)
+  CreateRevision(Int64)
+  ModRevision(Int64)
+  Value(Bytes)
+  Lease(Int64)
+} derive(Eq)
+pub fn CmpTarget::equal(Self, Self) -> Bool
+pub fn CmpTarget::not_equal(Self, Self) -> Bool
+
+pub(all) struct CompactionRequest {
+  revision : Int64
+  physical : Bool
+} derive(Eq)
+pub fn CompactionRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn CompactionRequest::empty() -> Self
+pub fn CompactionRequest::encode(Self) -> Bytes
+pub fn CompactionRequest::equal(Self, Self) -> Bool
+pub fn CompactionRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct CompactionResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn CompactionResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn CompactionResponse::empty() -> Self
+pub fn CompactionResponse::encode(Self) -> Bytes
+pub fn CompactionResponse::equal(Self, Self) -> Bool
+pub fn CompactionResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct Compare {
+  result : CompareResult
+  target : CompareTarget
+  key : Bytes
+  range_end : Bytes
+  target_union : CmpTarget
+} derive(Eq)
+pub fn Compare::decode(Bytes) -> Self raise @proto.PbError
+pub fn Compare::empty() -> Self
+pub fn Compare::encode(Self) -> Bytes
+pub fn Compare::equal(Self, Self) -> Bool
+pub fn Compare::not_equal(Self, Self) -> Bool
+
+pub(all) enum CompareResult {
+  Equal
+  Greater
+  Less
+  NotEqual
+} derive(Eq)
+pub fn CompareResult::equal(Self, Self) -> Bool
+pub fn CompareResult::from_int(Int32) -> Self
+pub fn CompareResult::not_equal(Self, Self) -> Bool
+pub fn CompareResult::to_int(Self) -> Int32
+
+pub(all) enum CompareTarget {
+  Version
+  Create
+  Mod
+  Value
+  Lease
+} derive(Eq)
+pub fn CompareTarget::equal(Self, Self) -> Bool
+pub fn CompareTarget::from_int(Int32) -> Self
+pub fn CompareTarget::not_equal(Self, Self) -> Bool
+pub fn CompareTarget::to_int(Self) -> Int32
+
+pub(all) struct DefragmentResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn DefragmentResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn DefragmentResponse::empty() -> Self
+pub fn DefragmentResponse::encode(Self) -> Bytes
+pub fn DefragmentResponse::equal(Self, Self) -> Bool
+pub fn DefragmentResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct DeleteRangeRequest {
+  key : Bytes
+  range_end : Bytes
+  prev_kv : Bool
+} derive(Eq)
+pub fn DeleteRangeRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn DeleteRangeRequest::empty() -> Self
+pub fn DeleteRangeRequest::encode(Self) -> Bytes
+pub fn DeleteRangeRequest::equal(Self, Self) -> Bool
+pub fn DeleteRangeRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct DeleteRangeResponse {
+  header : ResponseHeader
+  deleted : Int64
+  prev_kvs : Array[KeyValue]
+} derive(Eq)
+pub fn DeleteRangeResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn DeleteRangeResponse::empty() -> Self
+pub fn DeleteRangeResponse::encode(Self) -> Bytes
+pub fn DeleteRangeResponse::equal(Self, Self) -> Bool
+pub fn DeleteRangeResponse::not_equal(Self, Self) -> Bool
+
+pub(all) enum DowngradeAction {
+  Validate
+  Download
+  Cancel
+} derive(Eq)
+pub fn DowngradeAction::equal(Self, Self) -> Bool
+pub fn DowngradeAction::from_int(Int32) -> Self
+pub fn DowngradeAction::not_equal(Self, Self) -> Bool
+pub fn DowngradeAction::to_int(Self) -> Int32
+
+pub(all) struct DowngradeRequest {
+  action : DowngradeAction
+  version : String
+} derive(Eq)
+pub fn DowngradeRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn DowngradeRequest::empty() -> Self
+pub fn DowngradeRequest::encode(Self) -> Bytes
+pub fn DowngradeRequest::equal(Self, Self) -> Bool
+pub fn DowngradeRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct DowngradeResponse {
+  header : ResponseHeader
+  version : String
+  enabled : Bool
+} derive(Eq)
+pub fn DowngradeResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn DowngradeResponse::empty() -> Self
+pub fn DowngradeResponse::encode(Self) -> Bytes
+pub fn DowngradeResponse::equal(Self, Self) -> Bool
+pub fn DowngradeResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct Event {
+  event_type : EventType
+  kv : KeyValue
+  prev_kv : KeyValue
+} derive(Eq)
+pub fn Event::decode(Bytes) -> Self raise @proto.PbError
+pub fn Event::empty() -> Self
+pub fn Event::encode(Self) -> Bytes
+pub fn Event::equal(Self, Self) -> Bool
+pub fn Event::not_equal(Self, Self) -> Bool
+
+pub(all) enum EventType {
+  Put
+  Delete
+} derive(Eq)
+pub fn EventType::equal(Self, Self) -> Bool
+pub fn EventType::from_int(Int32) -> Self
+pub fn EventType::not_equal(Self, Self) -> Bool
+pub fn EventType::to_int(Self) -> Int32
+
+pub(all) enum FilterType {
+  NoPut
+  NoDelete
+} derive(Eq)
+pub fn FilterType::equal(Self, Self) -> Bool
+pub fn FilterType::from_int(Int32) -> Self
+pub fn FilterType::not_equal(Self, Self) -> Bool
+pub fn FilterType::to_int(Self) -> Int32
+
+pub(all) struct HashKVResponse {
+  header : ResponseHeader
+  hash : UInt32
+  compact_revision : Int64
+  revision : Int64
+} derive(Eq)
+pub fn HashKVResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn HashKVResponse::empty() -> Self
+pub fn HashKVResponse::encode(Self) -> Bytes
+pub fn HashKVResponse::equal(Self, Self) -> Bool
+pub fn HashKVResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct HashResponse {
+  header : ResponseHeader
+  hash : UInt32
+  compact_revision : Int64
+  revision : Int64
+} derive(Eq)
+pub fn HashResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn HashResponse::empty() -> Self
+pub fn HashResponse::encode(Self) -> Bytes
+pub fn HashResponse::equal(Self, Self) -> Bool
+pub fn HashResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct KeyValue {
+  key : Bytes
+  create_revision : Int64
+  mod_revision : Int64
+  version : Int64
+  value : Bytes
+  lease : Int64
+} derive(Eq)
+pub fn KeyValue::decode(Bytes) -> Self raise @proto.PbError
+pub fn KeyValue::empty() -> Self
+pub fn KeyValue::encode(Self) -> Bytes
+pub fn KeyValue::equal(Self, Self) -> Bool
+pub fn KeyValue::is_empty(Self) -> Bool
+pub fn KeyValue::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaderKey {
+  name : Bytes
+  key : Bytes
+  rev : Int64
+  lease : Int64
+} derive(Eq)
+pub fn LeaderKey::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaderKey::empty() -> Self
+pub fn LeaderKey::encode(Self) -> Bytes
+pub fn LeaderKey::equal(Self, Self) -> Bool
+pub fn LeaderKey::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaderRequest {
+  name : Bytes
+} derive(Eq)
+pub fn LeaderRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaderRequest::empty() -> Self
+pub fn LeaderRequest::encode(Self) -> Bytes
+pub fn LeaderRequest::equal(Self, Self) -> Bool
+pub fn LeaderRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaderResponse {
+  header : ResponseHeader
+  leader : LeaderKey
+} derive(Eq)
+pub fn LeaderResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaderResponse::empty() -> Self
+pub fn LeaderResponse::encode(Self) -> Bytes
+pub fn LeaderResponse::equal(Self, Self) -> Bool
+pub fn LeaderResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaseGrantRequest {
+  ttl : Int64
+  id : Int64
+} derive(Eq)
+pub fn LeaseGrantRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaseGrantRequest::empty() -> Self
+pub fn LeaseGrantRequest::encode(Self) -> Bytes
+pub fn LeaseGrantRequest::equal(Self, Self) -> Bool
+pub fn LeaseGrantRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaseGrantResponse {
+  header : ResponseHeader
+  id : Int64
+  ttl : Int64
+  error : String
+} derive(Eq)
+pub fn LeaseGrantResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaseGrantResponse::empty() -> Self
+pub fn LeaseGrantResponse::encode(Self) -> Bytes
+pub fn LeaseGrantResponse::equal(Self, Self) -> Bool
+pub fn LeaseGrantResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaseKeepAliveRequest {
+  id : Int64
+} derive(Eq)
+pub fn LeaseKeepAliveRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaseKeepAliveRequest::empty() -> Self
+pub fn LeaseKeepAliveRequest::encode(Self) -> Bytes
+pub fn LeaseKeepAliveRequest::equal(Self, Self) -> Bool
+pub fn LeaseKeepAliveRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaseKeepAliveResponse {
+  header : ResponseHeader
+  id : Int64
+  ttl : Int64
+} derive(Eq)
+pub fn LeaseKeepAliveResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaseKeepAliveResponse::empty() -> Self
+pub fn LeaseKeepAliveResponse::encode(Self) -> Bytes
+pub fn LeaseKeepAliveResponse::equal(Self, Self) -> Bool
+pub fn LeaseKeepAliveResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaseLeasesResponse {
+  header : ResponseHeader
+  leases : Array[LeaseStatus]
+} derive(Eq)
+pub fn LeaseLeasesResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaseLeasesResponse::empty() -> Self
+pub fn LeaseLeasesResponse::encode(Self) -> Bytes
+pub fn LeaseLeasesResponse::equal(Self, Self) -> Bool
+pub fn LeaseLeasesResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaseRevokeRequest {
+  id : Int64
+} derive(Eq)
+pub fn LeaseRevokeRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaseRevokeRequest::empty() -> Self
+pub fn LeaseRevokeRequest::encode(Self) -> Bytes
+pub fn LeaseRevokeRequest::equal(Self, Self) -> Bool
+pub fn LeaseRevokeRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaseRevokeResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn LeaseRevokeResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaseRevokeResponse::empty() -> Self
+pub fn LeaseRevokeResponse::encode(Self) -> Bytes
+pub fn LeaseRevokeResponse::equal(Self, Self) -> Bool
+pub fn LeaseRevokeResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaseStatus {
+  id : Int64
+} derive(Eq)
+pub fn LeaseStatus::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaseStatus::empty() -> Self
+pub fn LeaseStatus::encode(Self) -> Bytes
+pub fn LeaseStatus::equal(Self, Self) -> Bool
+pub fn LeaseStatus::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaseTimeToLiveRequest {
+  id : Int64
+  keys : Bool
+} derive(Eq)
+pub fn LeaseTimeToLiveRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaseTimeToLiveRequest::empty() -> Self
+pub fn LeaseTimeToLiveRequest::encode(Self) -> Bytes
+pub fn LeaseTimeToLiveRequest::equal(Self, Self) -> Bool
+pub fn LeaseTimeToLiveRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct LeaseTimeToLiveResponse {
+  header : ResponseHeader
+  id : Int64
+  ttl : Int64
+  granted_ttl : Int64
+  keys : Array[Bytes]
+} derive(Eq)
+pub fn LeaseTimeToLiveResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn LeaseTimeToLiveResponse::empty() -> Self
+pub fn LeaseTimeToLiveResponse::encode(Self) -> Bytes
+pub fn LeaseTimeToLiveResponse::equal(Self, Self) -> Bool
+pub fn LeaseTimeToLiveResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct LockRequest {
+  name : Bytes
+  lease : Int64
+} derive(Eq)
+pub fn LockRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn LockRequest::empty() -> Self
+pub fn LockRequest::encode(Self) -> Bytes
+pub fn LockRequest::equal(Self, Self) -> Bool
+pub fn LockRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct LockResponse {
+  header : ResponseHeader
+  key : Bytes
+  lease : Int64
+} derive(Eq)
+pub fn LockResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn LockResponse::empty() -> Self
+pub fn LockResponse::encode(Self) -> Bytes
+pub fn LockResponse::equal(Self, Self) -> Bool
+pub fn LockResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct Member {
+  id : UInt64
+  name : String
+  peer_urls : Array[String]
+  client_urls : Array[String]
+} derive(Eq)
+pub fn Member::decode(Bytes) -> Self raise @proto.PbError
+pub fn Member::empty() -> Self
+pub fn Member::encode(Self) -> Bytes
+pub fn Member::equal(Self, Self) -> Bool
+pub fn Member::not_equal(Self, Self) -> Bool
+
+pub(all) struct MemberAddRequest {
+  peer_urls : Array[String]
+  is_learner : Bool
+} derive(Eq)
+pub fn MemberAddRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn MemberAddRequest::empty() -> Self
+pub fn MemberAddRequest::encode(Self) -> Bytes
+pub fn MemberAddRequest::equal(Self, Self) -> Bool
+pub fn MemberAddRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct MemberAddResponse {
+  header : ResponseHeader
+  member_ : Member
+  members : Array[Member]
+} derive(Eq)
+pub fn MemberAddResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn MemberAddResponse::empty() -> Self
+pub fn MemberAddResponse::encode(Self) -> Bytes
+pub fn MemberAddResponse::equal(Self, Self) -> Bool
+pub fn MemberAddResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct MemberListRequest {
+  linearizable : Bool
+} derive(Eq)
+pub fn MemberListRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn MemberListRequest::empty() -> Self
+pub fn MemberListRequest::encode(Self) -> Bytes
+pub fn MemberListRequest::equal(Self, Self) -> Bool
+pub fn MemberListRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct MemberListResponse {
+  header : ResponseHeader
+  members : Array[Member]
+} derive(Eq)
+pub fn MemberListResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn MemberListResponse::empty() -> Self
+pub fn MemberListResponse::encode(Self) -> Bytes
+pub fn MemberListResponse::equal(Self, Self) -> Bool
+pub fn MemberListResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct MemberPromoteRequest {
+  id : UInt64
+} derive(Eq)
+pub fn MemberPromoteRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn MemberPromoteRequest::empty() -> Self
+pub fn MemberPromoteRequest::encode(Self) -> Bytes
+pub fn MemberPromoteRequest::equal(Self, Self) -> Bool
+pub fn MemberPromoteRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct MemberPromoteResponse {
+  header : ResponseHeader
+  members : Array[Member]
+} derive(Eq)
+pub fn MemberPromoteResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn MemberPromoteResponse::empty() -> Self
+pub fn MemberPromoteResponse::encode(Self) -> Bytes
+pub fn MemberPromoteResponse::equal(Self, Self) -> Bool
+pub fn MemberPromoteResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct MemberRemoveRequest {
+  id : UInt64
+} derive(Eq)
+pub fn MemberRemoveRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn MemberRemoveRequest::empty() -> Self
+pub fn MemberRemoveRequest::encode(Self) -> Bytes
+pub fn MemberRemoveRequest::equal(Self, Self) -> Bool
+pub fn MemberRemoveRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct MemberRemoveResponse {
+  header : ResponseHeader
+  members : Array[Member]
+} derive(Eq)
+pub fn MemberRemoveResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn MemberRemoveResponse::empty() -> Self
+pub fn MemberRemoveResponse::encode(Self) -> Bytes
+pub fn MemberRemoveResponse::equal(Self, Self) -> Bool
+pub fn MemberRemoveResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct MemberUpdateRequest {
+  id : UInt64
+  peer_urls : Array[String]
+} derive(Eq)
+pub fn MemberUpdateRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn MemberUpdateRequest::empty() -> Self
+pub fn MemberUpdateRequest::encode(Self) -> Bytes
+pub fn MemberUpdateRequest::equal(Self, Self) -> Bool
+pub fn MemberUpdateRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct MemberUpdateResponse {
+  header : ResponseHeader
+  members : Array[Member]
+} derive(Eq)
+pub fn MemberUpdateResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn MemberUpdateResponse::empty() -> Self
+pub fn MemberUpdateResponse::encode(Self) -> Bytes
+pub fn MemberUpdateResponse::equal(Self, Self) -> Bool
+pub fn MemberUpdateResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct MoveLeaderRequest {
+  target_id : UInt64
+} derive(Eq)
+pub fn MoveLeaderRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn MoveLeaderRequest::empty() -> Self
+pub fn MoveLeaderRequest::encode(Self) -> Bytes
+pub fn MoveLeaderRequest::equal(Self, Self) -> Bool
+pub fn MoveLeaderRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct MoveLeaderResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn MoveLeaderResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn MoveLeaderResponse::empty() -> Self
+pub fn MoveLeaderResponse::encode(Self) -> Bytes
+pub fn MoveLeaderResponse::equal(Self, Self) -> Bool
+pub fn MoveLeaderResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct Permission {
+  key : Bytes
+  range_end : Bytes
+  perm_type : PermissionType
+  name : String
+} derive(Eq)
+pub fn Permission::decode(Bytes) -> Self raise @proto.PbError
+pub fn Permission::empty() -> Self
+pub fn Permission::encode(Self) -> Bytes
+pub fn Permission::equal(Self, Self) -> Bool
+pub fn Permission::not_equal(Self, Self) -> Bool
+
+pub(all) enum PermissionType {
+  Read
+  Write
+  ReadWrite
+} derive(Eq)
+pub fn PermissionType::equal(Self, Self) -> Bool
+pub fn PermissionType::from_int(Int32) -> Self
+pub fn PermissionType::not_equal(Self, Self) -> Bool
+pub fn PermissionType::to_int(Self) -> Int32
+
+pub(all) struct ProclaimRequest {
+  leader : LeaderKey
+  value : Bytes
+} derive(Eq)
+pub fn ProclaimRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn ProclaimRequest::empty() -> Self
+pub fn ProclaimRequest::encode(Self) -> Bytes
+pub fn ProclaimRequest::equal(Self, Self) -> Bool
+pub fn ProclaimRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct ProclaimResponse {
+  header : ResponseHeader
+  leader : LeaderKey
+} derive(Eq)
+pub fn ProclaimResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn ProclaimResponse::empty() -> Self
+pub fn ProclaimResponse::encode(Self) -> Bytes
+pub fn ProclaimResponse::equal(Self, Self) -> Bool
+pub fn ProclaimResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct PutRequest {
+  key : Bytes
+  value : Bytes
+  lease : Int64
+  prev_kv : Bool
+  ignore_value : Bool
+  ignore_lease : Bool
+} derive(Eq)
+pub fn PutRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn PutRequest::empty() -> Self
+pub fn PutRequest::encode(Self) -> Bytes
+pub fn PutRequest::equal(Self, Self) -> Bool
+pub fn PutRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct PutResponse {
+  header : ResponseHeader
+  prev_kv : KeyValue
+} derive(Eq)
+pub fn PutResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn PutResponse::empty() -> Self
+pub fn PutResponse::encode(Self) -> Bytes
+pub fn PutResponse::equal(Self, Self) -> Bool
+pub fn PutResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct RangeRequest {
+  key : Bytes
+  range_end : Bytes
+  limit : Int64
+  revision : Int64
+  sort_order : SortOrder
+  sort_target : SortTarget
+  serializable : Bool
+  keys_only : Bool
+  count_only : Bool
+  min_mod_revision : Int64
+  max_mod_revision : Int64
+  min_create_revision : Int64
+  max_create_revision : Int64
+  progress_notify : Bool
+} derive(Eq)
+pub fn RangeRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn RangeRequest::empty() -> Self
+pub fn RangeRequest::encode(Self) -> Bytes
+pub fn RangeRequest::equal(Self, Self) -> Bool
+pub fn RangeRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct RangeResponse {
+  header : ResponseHeader
+  kvs : Array[KeyValue]
+  more : Bool
+  count : Int64
+} derive(Eq)
+pub fn RangeResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn RangeResponse::empty() -> Self
+pub fn RangeResponse::encode(Self) -> Bytes
+pub fn RangeResponse::equal(Self, Self) -> Bool
+pub fn RangeResponse::not_equal(Self, Self) -> Bool
+
+pub(all) enum RequestOp {
+  RequestRange(RangeRequest)
+  RequestPut(PutRequest)
+  RequestDeleteRange(DeleteRangeRequest)
+  RequestTxn(TxnRequest)
+} derive(Eq)
+pub fn RequestOp::decode(Bytes) -> Self raise @proto.PbError
+pub fn RequestOp::encode(Self) -> Bytes
+pub fn RequestOp::equal(Self, Self) -> Bool
+pub fn RequestOp::not_equal(Self, Self) -> Bool
+
+pub(all) struct ResignRequest {
+  leader : LeaderKey
+} derive(Eq)
+pub fn ResignRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn ResignRequest::empty() -> Self
+pub fn ResignRequest::encode(Self) -> Bytes
+pub fn ResignRequest::equal(Self, Self) -> Bool
+pub fn ResignRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct ResignResponse {
+  header : ResponseHeader
+} derive(Eq)
+pub fn ResignResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn ResignResponse::empty() -> Self
+pub fn ResignResponse::encode(Self) -> Bytes
+pub fn ResignResponse::equal(Self, Self) -> Bool
+pub fn ResignResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct ResponseHeader {
+  cluster_id : UInt64
+  member_id : UInt64
+  revision : Int64
+  raft_term : UInt64
+} derive(Eq)
+pub fn ResponseHeader::decode(Bytes) -> Self raise @proto.PbError
+pub fn ResponseHeader::empty() -> Self
+pub fn ResponseHeader::encode(Self) -> Bytes
+pub fn ResponseHeader::equal(Self, Self) -> Bool
+pub fn ResponseHeader::not_equal(Self, Self) -> Bool
+
+pub(all) enum ResponseOp {
+  ResponseRange(RangeResponse)
+  ResponsePut(PutResponse)
+  ResponseDeleteRange(DeleteRangeResponse)
+  ResponseTxn(TxnResponse)
+} derive(Eq)
+pub fn ResponseOp::decode(Bytes) -> Self raise @proto.PbError
+pub fn ResponseOp::encode(Self) -> Bytes
+pub fn ResponseOp::equal(Self, Self) -> Bool
+pub fn ResponseOp::not_equal(Self, Self) -> Bool
+
+pub(all) struct SnapshotRequest {
+} derive(Eq)
+pub fn SnapshotRequest::decode(Bytes) -> Self
+pub fn SnapshotRequest::encode(Self) -> Bytes
+pub fn SnapshotRequest::equal(Self, Self) -> Bool
+pub fn SnapshotRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct SnapshotResponse {
+  header : ResponseHeader
+  blob : Bytes
+  remaining_bytes : Int64
+} derive(Eq)
+pub fn SnapshotResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn SnapshotResponse::empty() -> Self
+pub fn SnapshotResponse::encode(Self) -> Bytes
+pub fn SnapshotResponse::equal(Self, Self) -> Bool
+pub fn SnapshotResponse::not_equal(Self, Self) -> Bool
+
+pub(all) enum SortOrder {
+  None
+  Ascend
+  Descend
+} derive(Eq)
+pub fn SortOrder::equal(Self, Self) -> Bool
+pub fn SortOrder::from_int(Int32) -> Self
+pub fn SortOrder::not_equal(Self, Self) -> Bool
+pub fn SortOrder::to_int(Self) -> Int32
+
+pub(all) enum SortTarget {
+  Key
+  Version
+  Create
+  Mod
+  Value
+} derive(Eq)
+pub fn SortTarget::equal(Self, Self) -> Bool
+pub fn SortTarget::from_int(Int32) -> Self
+pub fn SortTarget::not_equal(Self, Self) -> Bool
+pub fn SortTarget::to_int(Self) -> Int32
+
+pub(all) struct Status {
+  code : Int32
+  message : String
+} derive(Eq)
+pub fn Status::equal(Self, Self) -> Bool
+pub fn Status::not_equal(Self, Self) -> Bool
+pub fn Status::to_string(Self) -> String
+
+pub(all) struct StatusResponse {
+  header : ResponseHeader
+  version : String
+  db_size : Int64
+  leader : UInt64
+  raft_index : UInt64
+  raft_term : UInt64
+  raft_applied_index : UInt64
+  errors : Array[Alarm]
+  db_size_in_use : Int64
+} derive(Eq)
+pub fn StatusResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn StatusResponse::empty() -> Self
+pub fn StatusResponse::encode(Self) -> Bytes
+pub fn StatusResponse::equal(Self, Self) -> Bool
+pub fn StatusResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct TlsConfig {
+  enabled : Bool
+  ca_cert : Bytes
+  cert : Bytes
+  key : Bytes
+  server_name : String
+} derive(Eq)
+pub fn TlsConfig::equal(Self, Self) -> Bool
+pub fn TlsConfig::not_equal(Self, Self) -> Bool
+
+pub(all) struct TxnRequest {
+  compare : Array[Compare]
+  success : Array[RequestOp]
+  failure : Array[RequestOp]
+} derive(Eq)
+pub fn TxnRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn TxnRequest::empty() -> Self
+pub fn TxnRequest::encode(Self) -> Bytes
+pub fn TxnRequest::equal(Self, Self) -> Bool
+pub fn TxnRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct TxnResponse {
+  header : ResponseHeader
+  succeeded : Bool
+  responses : Array[ResponseOp]
+} derive(Eq)
+pub fn TxnResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn TxnResponse::empty() -> Self
+pub fn TxnResponse::encode(Self) -> Bytes
+pub fn TxnResponse::equal(Self, Self) -> Bool
+pub fn TxnResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct UnlockRequest {
+  key : Bytes
+} derive(Eq)
+pub fn UnlockRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn UnlockRequest::empty() -> Self
+pub fn UnlockRequest::encode(Self) -> Bytes
+pub fn UnlockRequest::equal(Self, Self) -> Bool
+pub fn UnlockRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct UnlockResponse {
+  header : ResponseHeader
+  key : Bytes
+} derive(Eq)
+pub fn UnlockResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn UnlockResponse::empty() -> Self
+pub fn UnlockResponse::encode(Self) -> Bytes
+pub fn UnlockResponse::equal(Self, Self) -> Bool
+pub fn UnlockResponse::not_equal(Self, Self) -> Bool
+
+pub(all) struct UserAddOptions {
+  no_password : Bool
+} derive(Eq)
+pub fn UserAddOptions::decode(Bytes) -> Self raise @proto.PbError
+pub fn UserAddOptions::empty() -> Self
+pub fn UserAddOptions::encode(Self) -> Bytes
+pub fn UserAddOptions::equal(Self, Self) -> Bool
+pub fn UserAddOptions::not_equal(Self, Self) -> Bool
+
+pub(all) struct WatchCancelRequest {
+  watch_id : Int64
+} derive(Eq)
+pub fn WatchCancelRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn WatchCancelRequest::empty() -> Self
+pub fn WatchCancelRequest::encode(Self) -> Bytes
+pub fn WatchCancelRequest::equal(Self, Self) -> Bool
+pub fn WatchCancelRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct WatchCreateRequest {
+  key : Bytes
+  range_end : Bytes
+  start_revision : Int64
+  progress_notify : Bool
+  filters : Array[FilterType]
+  prev_kv : Bool
+  watch_id : Int64
+  fragment : Bool
+} derive(Eq)
+pub fn WatchCreateRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn WatchCreateRequest::empty() -> Self
+pub fn WatchCreateRequest::encode(Self) -> Bytes
+pub fn WatchCreateRequest::equal(Self, Self) -> Bool
+pub fn WatchCreateRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct WatchProgressRequest {
+} derive(Eq)
+pub fn WatchProgressRequest::decode(Bytes) -> Self
+pub fn WatchProgressRequest::encode(Self) -> Bytes
+pub fn WatchProgressRequest::equal(Self, Self) -> Bool
+pub fn WatchProgressRequest::not_equal(Self, Self) -> Bool
+
+pub(all) enum WatchRequest {
+  CreateRequest(WatchCreateRequest)
+  CancelRequest(WatchCancelRequest)
+  ProgressRequest(WatchProgressRequest)
+} derive(Eq)
+pub fn WatchRequest::decode(Bytes) -> Self raise @proto.PbError
+pub fn WatchRequest::encode(Self) -> Bytes
+pub fn WatchRequest::equal(Self, Self) -> Bool
+pub fn WatchRequest::not_equal(Self, Self) -> Bool
+
+pub(all) struct WatchResponse {
+  header : ResponseHeader
+  watch_id : Int64
+  created : Bool
+  canceled : Bool
+  events : Array[Event]
+  compact_revision : Int64
+  canceled_reason : String
+  fragment : Bool
+  progress_notify : Bool
+} derive(Eq)
+pub fn WatchResponse::decode(Bytes) -> Self raise @proto.PbError
+pub fn WatchResponse::empty() -> Self
+pub fn WatchResponse::encode(Self) -> Bytes
+pub fn WatchResponse::equal(Self, Self) -> Bool
+pub fn WatchResponse::not_equal(Self, Self) -> Bool
 
 // Type aliases
 

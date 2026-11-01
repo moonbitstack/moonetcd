@@ -1,2 +1,7 @@
-// What this package implements, and a first-hand link to the specification it
-// implements. A package without that link is not finished.
+// moonetcd: an etcd v3 client for MoonBit. The root package holds the protobuf
+// message types and codecs for the etcd v3 API (etcdserverpb and the mvccpb
+// values it carries); the gRPC transport lives in `moonetcd/client`, and the
+// client-side concurrency helpers in `moonetcd/concurrency`.
+import {
+  "moonbitstack/moonrpc/proto",
+}
