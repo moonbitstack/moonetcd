@@ -3,11 +3,8 @@
 // machine without etcd and a real exercise of the client in CI. Every test uses its
 // own key prefix so runs do not collide.
 //
-// These cover the unary services against a real etcd — KV, Txn, Lease, Cluster, Auth,
-// Maintenance and the v3election service — which is where wire field-number mistakes
-// surface. Watch/KeepAlive are bidi and depend on a background read pump; they are
-// excluded here because that pump is not scheduled reliably by every async runtime
-// (see the runtime note in the README).
+// These cover KV, Txn, Lease, Watch, Cluster, Auth, Maintenance and the v3election
+// service against a real etcd, which is where wire field-number mistakes surface.
 
 ///|
 async fn try_connect() -> @client.Client? {
@@ -165,6 +162,46 @@ async test "integration: election campaign / leader / resign" {
       assert_eq(lead.kv.key.length() >= 1, true)
       let _ = c.election().resign(camp.leader)
       let _ = c.lease().revoke(granted.id)
+      c.close()
+    }
+  }
+}
+
+///|
+async test "integration: watch sees a put" {
+  match try_connect() {
+    None => ()
+    Some(c) => {
+      @async.with_task_group <| g => {
+        let req = @moonetcd.WatchCreateRequest::{
+          ..@moonetcd.WatchCreateRequest::empty(),
+          key: b"/moonetcd-it/watch",
+        }
+        let chan = c.watch().watch_create(g, req)
+        // Wait for the create acknowledgement, so the put below is observed rather
+        // than racing ahead of the watch's registration.
+        let _ = chan.next()
+        let _ = c.kv().put(b"/moonetcd-it/watch", b"changed")
+        let mut events = 0
+        let mut reads = 0
+        while reads < 5 && events == 0 {
+          match chan.next() {
+            Some(resp) => {
+              events = events + resp.events.length()
+              reads = reads + 1
+            }
+            None => reads = 5
+          }
+        }
+        assert_eq(events >= 1, true)
+        chan.cancel()
+        let _ = c
+          .kv()
+          .delete_range(@moonetcd.DeleteRangeRequest::{
+            ..@moonetcd.DeleteRangeRequest::empty(),
+            key: b"/moonetcd-it/watch",
+          })
+      }
       c.close()
     }
   }

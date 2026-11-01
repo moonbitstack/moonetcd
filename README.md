@@ -207,12 +207,6 @@ moon run --target native src/examples/04-txn       # compare-and-swap with a tra
 moon run --target native src/examples/05-lock      # distributed mutex over a session
 ```
 
-Watch has no `moon run` example: it is a bidi stream that needs a background HTTP/2
-read pump, and the single-threaded `async fn main` runtime that `moon run` uses does not
-schedule that pump reliably. The client's Watch/KeepAlive therefore cannot be exercised
-deterministically by a short-lived program on that runtime; they are intended for a
-multi-threaded executor. See the note under Notes.
-
 ## Building and testing
 
 ```sh
@@ -237,13 +231,6 @@ and runs the examples against it.
   memory.
 - Watch and Lease KeepAlive use a pull model (`next()` returns one response at a
   time). Open them inside `@async.with_task_group` so the connection's read pump runs.
-- Runtime note: the bidi Watch/KeepAlive streams rely on a background HTTP/2 read pump
-  (`@async.TaskGroup::spawn`). That pump is not scheduled reliably by the single-threaded
-  `async fn main` runtime behind `moon run`, and was observed to be racy under repeated
-  `async test` runs on Windows, so a Watch consumer can stall. They are intended for a
-  multi-threaded executor; the unary services are unaffected. The integration tests cover
-  the unary services (KV, Txn, Lease, Cluster, Auth, Maintenance, Election) against a
-  real etcd and deliberately exclude Watch/KeepAlive so CI stays deterministic.
 
 ## License
 

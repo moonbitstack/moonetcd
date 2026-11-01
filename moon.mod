@@ -13,8 +13,8 @@ keywords = [ "etcd", "etcdv3", "client", "moonbit", "grpc" ]
 description = "An etcd v3 client for MoonBit."
 
 import {
-  "moonbitstack/moonrpc@0.21.3",
-  "moonbitstack/moonhttp@0.15.3",
+  "moonbitstack/moonrpc@0.21.4",
+  "moonbitstack/moonhttp@0.15.4",
   "moonbitlang/async@0.22.5",
 }
 
