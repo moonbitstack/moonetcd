@@ -48,11 +48,14 @@ pub async fn Election::proclaim(
 
 ///|
 /// The current leader of the election.
+
+///|
+/// The current leader's key-value of the election.
 pub async fn Election::current_leader(
   self : Election,
-) -> @moonetcd.LeaderKey raise @client.EtcdError {
+) -> @moonetcd.KeyValue raise @client.EtcdError {
   let resp = self.client.election().leader(self.name)
-  resp.leader
+  resp.kv
 }
 
 ///|

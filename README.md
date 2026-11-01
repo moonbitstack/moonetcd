@@ -149,18 +149,17 @@ import {
   "moonbitstack/moonetcd/concurrency",
 }
 
-@async.with_task_group <| g => {
-  let session = @concurrency.Session::new(client, 30L, g)   // grants a lease
-  let mutex = @concurrency.Mutex::new(client, session, b"/my-lock")
-  mutex.lock()
-  // critical section
-  mutex.unlock()
-  session.close()                                            // revokes the lease
-}
+let session = @concurrency.Session::new(client, 30L)   // grants a lease
+let mutex = @concurrency.Mutex::new(client, session, b"/my-lock")
+mutex.lock()
+// critical section
+mutex.unlock()
+session.close()                                         // revokes the lease
 ```
 
-- `Session` grants a lease and opens its KeepAlive stream; drive it with
-  `keepalive_once()` every TTL/3 seconds so the lease does not expire.
+- `Session` grants a lease and revokes it on `close`; both are plain unary calls. For a
+  long-lived session, open `session.keep_alive(task_group)` and drive the returned
+  `KeepAlive` so the lease does not expire.
 - `Mutex` is a distributed lock over `v3lock`, held on the session's lease, so it is
   released automatically if the holder dies.
 - `Election` campaigns, proclaims, and resigns over `v3election`.
@@ -201,13 +200,17 @@ Each example is a runnable `moon run` target. They expect etcd at
 `endpoint` in the example at your member.
 
 ```sh
-moon run src/examples/00-connect     # dial and print member status
-moon run src/examples/01-kv          # put / get / prefix scan / delete
-moon run src/examples/02-watch       # watch a key, read its events
-moon run src/examples/03-lease       # grant a lease, attach a key, revoke
-moon run src/examples/04-txn         # compare-and-swap with a transaction
-moon run src/examples/05-lock        # distributed mutex over a session
+moon run --target native src/examples/00-connect   # dial and print member status
+moon run --target native src/examples/01-kv        # put / get / prefix scan / delete
+moon run --target native src/examples/03-lease     # grant a lease, attach a key, revoke
+moon run --target native src/examples/04-txn       # compare-and-swap with a transaction
+moon run --target native src/examples/05-lock      # distributed mutex over a session
 ```
+
+Watch is exercised by the integration tests (`moon test --target native`) rather than a
+`moon run` example: the `async fn main` runtime that `moon run` uses cannot drive the
+background HTTP/2 read pump that a bidi Watch/KeepAlive needs, while the `async test`
+runtime can. See the note under Notes.
 
 ## Building and testing
 
@@ -233,6 +236,12 @@ and runs the examples against it.
   memory.
 - Watch and Lease KeepAlive use a pull model (`next()` returns one response at a
   time). Open them inside `@async.with_task_group` so the connection's read pump runs.
+- Runtime note: the bidi Watch/KeepAlive streams rely on a background HTTP/2 read pump
+  (`@async.TaskGroup::spawn`). They run under the `async test` runtime and under a
+  multi-threaded executor, but the single-threaded `async fn main` runtime that
+  `moon run` uses does not schedule that pump reliably, so a `moon run` demo of Watch
+  can stall. The integration tests run them for real against etcd, so use
+  `moon test --target native` to exercise Watch/KeepAlive.
 
 ## License
 

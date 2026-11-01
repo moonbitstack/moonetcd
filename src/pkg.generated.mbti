@@ -609,7 +609,7 @@ pub fn LeaderRequest::not_equal(Self, Self) -> Bool
 
 pub(all) struct LeaderResponse {
   header : ResponseHeader
-  leader : LeaderKey
+  kv : KeyValue
 } derive(Eq)
 pub fn LeaderResponse::decode(Bytes) -> Self raise @proto.PbError
 pub fn LeaderResponse::empty() -> Self
@@ -902,7 +902,6 @@ pub fn ProclaimRequest::not_equal(Self, Self) -> Bool
 
 pub(all) struct ProclaimResponse {
   header : ResponseHeader
-  leader : LeaderKey
 } derive(Eq)
 pub fn ProclaimResponse::decode(Bytes) -> Self raise @proto.PbError
 pub fn ProclaimResponse::empty() -> Self

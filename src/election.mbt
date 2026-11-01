@@ -76,11 +76,11 @@ pub fn CampaignRequest::encode(self : CampaignRequest) -> Bytes {
   if self.name.length() > 0 {
     w.bytes_(1, self.name)
   }
-  if self.value.length() > 0 {
-    w.bytes_(2, self.value)
-  }
   if self.lease != 0 {
-    w.int64(3, self.lease)
+    w.int64(2, self.lease)
+  }
+  if self.value.length() > 0 {
+    w.bytes_(3, self.value)
   }
   w.to_bytes()
 }
@@ -94,8 +94,8 @@ pub fn CampaignRequest::decode(
   while !r.eof() {
     match r.read_tag() {
       (1, LengthDelim) => req = { ..req, name: r.read_bytes(), }
-      (2, LengthDelim) => req = { ..req, value: r.read_bytes(), }
-      (3, Varint) => req = { ..req, lease: r.read_int64(), }
+      (2, Varint) => req = { ..req, lease: r.read_int64(), }
+      (3, LengthDelim) => req = { ..req, value: r.read_bytes(), }
       (_, wire) => r.skip(wire)
     }
   }
@@ -187,14 +187,14 @@ pub fn LeaderRequest::decode(
 
 ///|
 pub fn LeaderResponse::empty() -> LeaderResponse {
-  { header: ResponseHeader::empty(), leader: LeaderKey::empty(), }
+  { header: ResponseHeader::empty(), kv: KeyValue::empty(), }
 }
 
 ///|
 /// The current leader (`v3election.LeaderResponse`).
 pub(all) struct LeaderResponse {
   header : ResponseHeader
-  leader : LeaderKey
+  kv : KeyValue
 } derive(Eq)
 
 ///|
@@ -206,8 +206,8 @@ pub fn LeaderResponse::encode(self : LeaderResponse) -> Bytes {
   if self.header != ResponseHeader::empty() {
     w.message_(1, self.header.encode())
   }
-  if self.leader != LeaderKey::empty() {
-    w.message_(2, self.leader.encode())
+  if self.kv != KeyValue::empty() {
+    w.message_(2, self.kv.encode())
   }
   w.to_bytes()
 }
@@ -223,7 +223,7 @@ pub fn LeaderResponse::decode(
       (1, LengthDelim) =>
         resp = { ..resp, header: ResponseHeader::decode(r.read_bytes()), }
       (2, LengthDelim) =>
-        resp = { ..resp, leader: LeaderKey::decode(r.read_bytes()), }
+        resp = { ..resp, kv: KeyValue::decode(r.read_bytes()), }
       (_, wire) => r.skip(wire)
     }
   }
@@ -276,14 +276,13 @@ pub fn ProclaimRequest::decode(
 
 ///|
 pub fn ProclaimResponse::empty() -> ProclaimResponse {
-  { header: ResponseHeader::empty(), leader: LeaderKey::empty(), }
+  { header: ResponseHeader::empty(), }
 }
 
 ///|
-/// The leadership after a proclaim (`v3election.ProclaimResponse`).
+/// The reply to a proclaim (`v3election.ProclaimResponse`): just the header.
 pub(all) struct ProclaimResponse {
   header : ResponseHeader
-  leader : LeaderKey
 } derive(Eq)
 
 ///|
@@ -295,9 +294,6 @@ pub fn ProclaimResponse::encode(self : ProclaimResponse) -> Bytes {
   if self.header != ResponseHeader::empty() {
     w.message_(1, self.header.encode())
   }
-  if self.leader != LeaderKey::empty() {
-    w.message_(2, self.leader.encode())
-  }
   w.to_bytes()
 }
 
@@ -306,17 +302,14 @@ pub fn ProclaimResponse::decode(
   data : Bytes,
 ) -> ProclaimResponse raise @proto.PbError {
   let r = @proto.PbReader::new(data)
-  let mut resp = ProclaimResponse::empty()
+  let mut header = ResponseHeader::empty()
   while !r.eof() {
     match r.read_tag() {
-      (1, LengthDelim) =>
-        resp = { ..resp, header: ResponseHeader::decode(r.read_bytes()), }
-      (2, LengthDelim) =>
-        resp = { ..resp, leader: LeaderKey::decode(r.read_bytes()), }
+      (1, LengthDelim) => header = ResponseHeader::decode(r.read_bytes())
       (_, wire) => r.skip(wire)
     }
   }
-  resp
+  { header, }
 }
 
 ///|

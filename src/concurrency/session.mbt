@@ -1,29 +1,25 @@
-// Session: a lease plus a KeepAlive stream that a group of keys share. The lease
-// keeps the keys alive while the caller drives `keepalive_once`; `close` revokes it,
-// which deletes every key attached to it.
+// Session: a lease that a group of keys share. Granting the lease and revoking it are
+// plain unary calls; keeping it alive is opt-in via `keep_alive`, which opens the
+// KeepAlive stream on a task group only when a long-lived session needs it.
 
 ///|
-/// A lease-backed session. Create it with `Session::new`; attach keys to
-/// `lease_id()`, and call `close` to revoke it.
+/// A lease-backed session. Create it with `Session::new`; attach keys to `lease_id()`,
+/// and call `close` to revoke it.
 pub struct Session {
   client : @client.Client
   lease_id : Int64
   ttl : Int64
-  ka : @client.KeepAlive
 }
 
 ///|
-/// Grant a lease of `ttl` seconds and open its KeepAlive stream. `g` is the task group
-/// that drives the stream's read pump, so call this inside `@async.with_task_group`.
+/// Grant a lease of `ttl` seconds. For a long-lived session, also open `keep_alive` and
+/// drive it so the lease does not expire.
 pub async fn Session::new(
   client : @client.Client,
   ttl : Int64,
-  g : @async.TaskGroup[Unit],
 ) -> Session raise @client.EtcdError {
   let resp = client.lease().grant(ttl)
-  let ka = client.lease().keep_alive(g)
-  ka.keep_alive(resp.id)
-  Session::{ client, lease_id: resp.id, ttl, ka, }
+  Session::{ client, lease_id: resp.id, ttl, }
 }
 
 ///|
@@ -39,20 +35,20 @@ pub fn Session::ttl(self : Session) -> Int64 {
 }
 
 ///|
-/// Read the next KeepAlive acknowledgement, returning `true` while the lease is still
-/// alive. Drive it every TTL/3 seconds to keep the lease from expiring.
-pub async fn Session::keepalive_once(
+/// Open a KeepAlive stream for this lease. `g` is the task group that drives the
+/// channel's read pump, so call this inside `@async.with_task_group`; then drive
+/// `keep_alive`/`next` to hold the lease.
+pub async fn Session::keep_alive(
   self : Session,
-) -> Bool raise @client.EtcdError {
-  match self.ka.next() {
-    Some(r) => r.ttl > 0
-    None => false
-  }
+  g : @async.TaskGroup[Unit],
+) -> @client.KeepAlive raise @client.EtcdError {
+  let ka = self.client.lease().keep_alive(g)
+  ka.keep_alive(self.lease_id)
+  ka
 }
 
 ///|
-/// Revoke the lease — deleting every key attached to it — and close the KeepAlive stream.
+/// Revoke the lease — deleting every key attached to it.
 pub async fn Session::close(self : Session) -> Unit raise @client.EtcdError {
-  self.ka.close()
   let _ = self.client.lease().revoke(self.lease_id)
 }

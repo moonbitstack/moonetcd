@@ -73,6 +73,7 @@ pub struct KeepAlive {
   client : Client
   mux : @net.MuxChannel
   bidi : @net.BidiStream
+  pump : @async.Task[Unit]
 }
 
 ///|
@@ -86,9 +87,10 @@ pub async fn Lease::keep_alive(
   let mux = @net.MuxChannel::connect(ep.0, ep.1) catch {
     _ => raise transport_error("keepalive dial")
   }
-  g.spawn_bg(() => mux.read_pump())
+  let pump = g.spawn(() => mux.read_pump())
+  @async.sleep(1)
   let bidi = mux.open_bidi("/etcdserverpb.Lease/LeaseKeepAlive")
-  KeepAlive::{ client: self.client, mux, bidi, }
+  KeepAlive::{ client: self.client, mux, bidi, pump, }
 }
 
 ///|
@@ -129,4 +131,5 @@ pub async fn KeepAlive::next(
 /// End the KeepAlive stream and close its connection.
 pub fn KeepAlive::close(self : KeepAlive) -> Unit {
   self.mux.close()
+  self.pump.cancel()
 }

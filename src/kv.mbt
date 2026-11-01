@@ -636,14 +636,14 @@ pub fn Compare::encode(self : Compare) -> Bytes {
     w.bytes_(3, self.key)
   }
   if self.range_end.length() > 0 {
-    w.bytes_(4, self.range_end)
+    w.bytes_(64, self.range_end)
   }
   match self.target_union {
-    Version(v) => w.int64(5, v)
-    CreateRevision(v) => w.int64(6, v)
-    ModRevision(v) => w.int64(7, v)
-    Value(v) => w.bytes_(8, v)
-    Lease(v) => w.int64(9, v)
+    Version(v) => w.int64(4, v)
+    CreateRevision(v) => w.int64(5, v)
+    ModRevision(v) => w.int64(6, v)
+    Value(v) => w.bytes_(7, v)
+    Lease(v) => w.int64(8, v)
   }
   w.to_bytes()
 }
@@ -659,13 +659,13 @@ pub fn Compare::decode(data : Bytes) -> Compare raise @proto.PbError {
       (2, Varint) =>
         cmp = { ..cmp, target: CompareTarget::from_int(r.read_int32()), }
       (3, LengthDelim) => cmp = { ..cmp, key: r.read_bytes(), }
-      (4, LengthDelim) => cmp = { ..cmp, range_end: r.read_bytes(), }
-      (5, Varint) => cmp = { ..cmp, target_union: Version(r.read_int64()), }
-      (6, Varint) =>
+      (4, Varint) => cmp = { ..cmp, target_union: Version(r.read_int64()), }
+      (5, Varint) =>
         cmp = { ..cmp, target_union: CreateRevision(r.read_int64()), }
-      (7, Varint) => cmp = { ..cmp, target_union: ModRevision(r.read_int64()), }
-      (8, LengthDelim) => cmp = { ..cmp, target_union: Value(r.read_bytes()), }
-      (9, Varint) => cmp = { ..cmp, target_union: Lease(r.read_int64()), }
+      (6, Varint) => cmp = { ..cmp, target_union: ModRevision(r.read_int64()), }
+      (7, LengthDelim) => cmp = { ..cmp, target_union: Value(r.read_bytes()), }
+      (8, Varint) => cmp = { ..cmp, target_union: Lease(r.read_int64()), }
+      (64, LengthDelim) => cmp = { ..cmp, range_end: r.read_bytes(), }
       (_, wire) => r.skip(wire)
     }
   }

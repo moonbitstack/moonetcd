@@ -118,16 +118,19 @@ async test "integration: watch sees a put" {
           key: b"/moonetcd-it/watch",
         }
         let chan = c.watch().watch_create(g, req)
+        // Wait for the create acknowledgement, so the put below is observed rather
+        // than racing ahead of the watch's registration.
+        let _ = chan.next()
         let _ = c.kv().put(b"/moonetcd-it/watch", b"changed")
         let mut events = 0
         let mut reads = 0
-        while reads < 3 && events == 0 {
+        while reads < 5 && events == 0 {
           match chan.next() {
             Some(resp) => {
               events = events + resp.events.length()
               reads = reads + 1
             }
-            None => reads = 3
+            None => reads = 5
           }
         }
         assert_eq(events >= 1, true)

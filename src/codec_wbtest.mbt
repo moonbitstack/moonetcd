@@ -507,3 +507,21 @@ test "error: Status and EtcdError messages render" {
     "etcdserver: mvcc: required revision is a future revision: 9",
   )
 }
+
+// ===== Wire compatibility with the etcd proto =====
+
+///|
+test "kv: Compare encodes etcd's real field numbers" {
+  // etcd's Compare puts the scalar oneof at 4..8 (version, create_revision,
+  // mod_revision, value, lease) and range_end at 64. A round trip alone would not
+  // catch a wrong field number, so pin the exact bytes here.
+  let c : Compare = {
+    result: Equal,
+    target: Value,
+    key: b"k",
+    range_end: b"z",
+    target_union: CmpTarget::Value(b"v"),
+  }
+  let expected : Bytes = b"\x08\x00\x10\x03\x1a\x01\x6b\x82\x04\x01\x7a\x3a\x01\x76"
+  assert_eq(c.encode(), expected)
+}

@@ -16,6 +16,7 @@ pub struct WatchChan {
   g : @async.TaskGroup[Unit]
   mut mux : @net.MuxChannel
   mut bidi : @net.BidiStream
+  mut pump : @async.Task[Unit]?
   mut create : WatchCreateRequest
   mut last_revision : Int64
   mut watch_id : Int64
@@ -36,13 +37,17 @@ pub async fn Watch::watch_create(
   let mux = @net.MuxChannel::connect(ep.0, ep.1) catch {
     _ => raise transport_error("watch dial")
   }
-  g.spawn_bg(() => mux.read_pump())
+  let pump = g.spawn(() => mux.read_pump())
+  // Let the read pump start before the first send/recv; without this yield it
+  // can lose the race and `recv` blocks on an inbox nobody is driving yet.
+  @async.sleep(1)
   let bidi = mux.open_bidi("/etcdserverpb.Watch/Watch")
   let ch = WatchChan::{
     client: self.client,
     g,
     mux,
     bidi,
+    pump: Some(pump),
     create: req,
     last_revision: req.start_revision,
     watch_id: 0,
@@ -55,9 +60,11 @@ pub async fn Watch::watch_create(
 }
 
 ///|
-/// (Re)send the current create request on the active stream.
+/// (Re)send the current create request on the active stream. The `Watch` method takes a
+/// `WatchRequest` whose oneof tags the create as `create_request` (field 1), so the bare
+/// `WatchCreateRequest` must be wrapped, not sent on its own.
 async fn WatchChan::send_create(self : WatchChan) -> Unit raise EtcdError {
-  self.bidi.send(self.create.encode()) catch {
+  self.bidi.send(@moonetcd.WatchRequest::CreateRequest(self.create).encode()) catch {
     _ => raise transport_error("watch send create")
   }
 }
@@ -109,12 +116,17 @@ pub async fn WatchChan::next(
 /// Reconnect to the next endpoint and resume the watch from just after the last event.
 async fn WatchChan::reconnect(self : WatchChan) -> Unit raise EtcdError {
   self.mux.close()
+  if self.pump is Some(t) {
+    t.cancel()
+  }
   self.endpoint_idx = self.endpoint_idx + 1
   let ep = self.client.endpoint_at(self.endpoint_idx)
   let mux = @net.MuxChannel::connect(ep.0, ep.1) catch {
     _ => raise transport_error("watch reconnect dial")
   }
-  self.g.spawn_bg(() => mux.read_pump())
+  let pump = self.g.spawn(() => mux.read_pump())
+  self.pump = Some(pump)
+  @async.sleep(1)
   let bidi = mux.open_bidi("/etcdserverpb.Watch/Watch")
   self.mux = mux
   self.bidi = bidi
@@ -133,11 +145,16 @@ pub async fn WatchChan::cancel(self : WatchChan) -> Unit {
   self.closed = true
   try {
     self.bidi.send(
-      @moonetcd.WatchCancelRequest::{ watch_id: self.watch_id, }.encode(),
+      @moonetcd.WatchRequest::CancelRequest(@moonetcd.WatchCancelRequest::{
+        watch_id: self.watch_id,
+      }).encode(),
     )
     self.bidi.close_send()
   } catch {
     _ => ()
   }
   self.mux.close()
+  if self.pump is Some(t) {
+    t.cancel()
+  }
 }

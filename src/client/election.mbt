@@ -18,7 +18,7 @@ pub async fn Election::campaign(
 ) -> CampaignResponse raise EtcdError {
   let req = @moonetcd.CampaignRequest::{ name, value, lease, }
   self.client.rpc(
-    "/v3election.Election/Campaign",
+    "/v3electionpb.Election/Campaign",
     req.encode(),
     @moonetcd.CampaignResponse::decode,
   )
@@ -33,7 +33,7 @@ pub async fn Election::proclaim(
 ) -> ProclaimResponse raise EtcdError {
   let req = @moonetcd.ProclaimRequest::{ leader, value, }
   self.client.rpc(
-    "/v3election.Election/Proclaim",
+    "/v3electionpb.Election/Proclaim",
     req.encode(),
     @moonetcd.ProclaimResponse::decode,
   )
@@ -47,7 +47,7 @@ pub async fn Election::leader(
 ) -> LeaderResponse raise EtcdError {
   let req = @moonetcd.LeaderRequest::{ name, }
   self.client.rpc(
-    "/v3election.Election/Leader",
+    "/v3electionpb.Election/Leader",
     req.encode(),
     @moonetcd.LeaderResponse::decode,
   )
@@ -61,7 +61,7 @@ pub async fn Election::resign(
 ) -> ResignResponse raise EtcdError {
   let req = @moonetcd.ResignRequest::{ leader, }
   self.client.rpc(
-    "/v3election.Election/Resign",
+    "/v3electionpb.Election/Resign",
     req.encode(),
     @moonetcd.ResignResponse::decode,
   )

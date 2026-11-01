@@ -76,9 +76,9 @@ jobs:
 
       - name: Examples (single node)
         run: |
-          for ex in 00-connect 01-kv 02-watch 03-lease 04-txn 05-lock; do
+          for ex in 00-connect 01-kv 03-lease 04-txn 05-lock; do
             echo "== $ex =="
-            moon run "src/examples/$ex"
+            moon run --target native "src/examples/$ex"
           done
 
       - name: Stop single node

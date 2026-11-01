@@ -17,7 +17,7 @@ pub async fn Lock::lock(
 ) -> LockResponse raise EtcdError {
   let req = @moonetcd.LockRequest::{ name, lease, }
   self.client.rpc(
-    "/v3lock.Lock/Lock",
+    "/v3lockpb.Lock/Lock",
     req.encode(),
     @moonetcd.LockResponse::decode,
   )
@@ -31,7 +31,7 @@ pub async fn Lock::unlock(
 ) -> UnlockResponse raise EtcdError {
   let req = @moonetcd.UnlockRequest::{ key, }
   self.client.rpc(
-    "/v3lock.Lock/Unlock",
+    "/v3lockpb.Lock/Unlock",
     req.encode(),
     @moonetcd.UnlockResponse::decode,
   )
