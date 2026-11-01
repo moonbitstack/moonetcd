@@ -49,6 +49,8 @@ jobs:
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+      - name: Update the registry index
+        run: moon update
       - name: Install etcd
         run: |
           ETCD_VERSION=v3.5.16
