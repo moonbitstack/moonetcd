@@ -63,7 +63,7 @@ pub fn AlarmRequest::not_equal(Self, Self) -> Bool
 
 pub(all) struct AlarmResponse {
   header : ResponseHeader
-  alarm : Alarm
+  alarms : Array[Alarm]
 } derive(Eq)
 pub fn AlarmResponse::decode(Bytes) -> Self raise @proto.PbError
 pub fn AlarmResponse::empty() -> Self

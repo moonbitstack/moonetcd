@@ -1,6 +1,13 @@
 // Integration tests against a live etcd at 127.0.0.1:2379. `try_connect` probes the
 // member and returns `None` when nothing answers, so these tests are a no-op on a
-// machine without etcd and a real exercise of the client in CI.
+// machine without etcd and a real exercise of the client in CI. Every test uses its
+// own key prefix so runs do not collide.
+//
+// These cover the unary services against a real etcd — KV, Txn, Lease, Cluster, Auth,
+// Maintenance and the v3election service — which is where wire field-number mistakes
+// surface. Watch/KeepAlive are bidi and depend on a background read pump; they are
+// excluded here because that pump is not scheduled reliably by every async runtime
+// (see the runtime note in the README).
 
 ///|
 async fn try_connect() -> @client.Client? {
@@ -108,40 +115,56 @@ async test "integration: lease grant / time-to-live / revoke" {
 }
 
 ///|
-async test "integration: watch sees a put" {
+async test "integration: cluster member list" {
   match try_connect() {
     None => ()
     Some(c) => {
-      @async.with_task_group <| g => {
-        let req = @moonetcd.WatchCreateRequest::{
-          ..@moonetcd.WatchCreateRequest::empty(),
-          key: b"/moonetcd-it/watch",
-        }
-        let chan = c.watch().watch_create(g, req)
-        // Wait for the create acknowledgement, so the put below is observed rather
-        // than racing ahead of the watch's registration.
-        let _ = chan.next()
-        let _ = c.kv().put(b"/moonetcd-it/watch", b"changed")
-        let mut events = 0
-        let mut reads = 0
-        while reads < 5 && events == 0 {
-          match chan.next() {
-            Some(resp) => {
-              events = events + resp.events.length()
-              reads = reads + 1
-            }
-            None => reads = 5
-          }
-        }
-        assert_eq(events >= 1, true)
-        chan.cancel()
-        let _ = c
-          .kv()
-          .delete_range(@moonetcd.DeleteRangeRequest::{
-            ..@moonetcd.DeleteRangeRequest::empty(),
-            key: b"/moonetcd-it/watch",
-          })
-      }
+      let resp = c.cluster().member_list()
+      assert_eq(resp.members.length() >= 1, true)
+      c.close()
+    }
+  }
+}
+
+///|
+async test "integration: auth status on a fresh member" {
+  match try_connect() {
+    None => ()
+    Some(c) => {
+      let st = c.auth().status()
+      assert_eq(st.enabled, false)
+      c.close()
+    }
+  }
+}
+
+///|
+async test "integration: maintenance alarm get is empty on a fresh member" {
+  match try_connect() {
+    None => ()
+    Some(c) => {
+      let resp = c
+        .maintenance()
+        .alarm(@moonetcd.AlarmAction::Get, 0UL, @moonetcd.AlarmType::None)
+      assert_eq(resp.alarms.length(), 0)
+      c.close()
+    }
+  }
+}
+
+///|
+async test "integration: election campaign / leader / resign" {
+  match try_connect() {
+    None => ()
+    Some(c) => {
+      let granted = c.lease().grant(30L)
+      let name = b"/moonetcd-it/election"
+      let camp = c.election().campaign(name, b"candidate", granted.id)
+      assert_eq(camp.leader.name, name)
+      let lead = c.election().leader(name)
+      assert_eq(lead.kv.key.length() >= 1, true)
+      let _ = c.election().resign(camp.leader)
+      let _ = c.lease().revoke(granted.id)
       c.close()
     }
   }

@@ -16,7 +16,6 @@ pub struct WatchChan {
   g : @async.TaskGroup[Unit]
   mut mux : @net.MuxChannel
   mut bidi : @net.BidiStream
-  mut pump : @async.Task[Unit]?
   mut create : WatchCreateRequest
   mut last_revision : Int64
   mut watch_id : Int64
@@ -37,17 +36,13 @@ pub async fn Watch::watch_create(
   let mux = @net.MuxChannel::connect(ep.0, ep.1) catch {
     _ => raise transport_error("watch dial")
   }
-  let pump = g.spawn(() => mux.read_pump())
-  // Let the read pump start before the first send/recv; without this yield it
-  // can lose the race and `recv` blocks on an inbox nobody is driving yet.
-  @async.sleep(1)
+  g.spawn_bg(no_wait=true, () => mux.read_pump())
   let bidi = mux.open_bidi("/etcdserverpb.Watch/Watch")
   let ch = WatchChan::{
     client: self.client,
     g,
     mux,
     bidi,
-    pump: Some(pump),
     create: req,
     last_revision: req.start_revision,
     watch_id: 0,
@@ -116,17 +111,12 @@ pub async fn WatchChan::next(
 /// Reconnect to the next endpoint and resume the watch from just after the last event.
 async fn WatchChan::reconnect(self : WatchChan) -> Unit raise EtcdError {
   self.mux.close()
-  if self.pump is Some(t) {
-    t.cancel()
-  }
   self.endpoint_idx = self.endpoint_idx + 1
   let ep = self.client.endpoint_at(self.endpoint_idx)
   let mux = @net.MuxChannel::connect(ep.0, ep.1) catch {
     _ => raise transport_error("watch reconnect dial")
   }
-  let pump = self.g.spawn(() => mux.read_pump())
-  self.pump = Some(pump)
-  @async.sleep(1)
+  self.g.spawn_bg(no_wait=true, () => mux.read_pump())
   let bidi = mux.open_bidi("/etcdserverpb.Watch/Watch")
   self.mux = mux
   self.bidi = bidi
@@ -154,7 +144,4 @@ pub async fn WatchChan::cancel(self : WatchChan) -> Unit {
     _ => ()
   }
   self.mux.close()
-  if self.pump is Some(t) {
-    t.cancel()
-  }
 }

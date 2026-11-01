@@ -155,14 +155,15 @@ pub fn AlarmRequest::decode(data : Bytes) -> AlarmRequest raise @proto.PbError {
 
 ///|
 pub fn AlarmResponse::empty() -> AlarmResponse {
-  { header: ResponseHeader::empty(), alarm: Alarm::empty(), }
+  { header: ResponseHeader::empty(), alarms: [], }
 }
 
 ///|
-/// The alarm state (`etcdserverpb.AlarmResponse`).
+/// The alarm state (`etcdserverpb.AlarmResponse`): a repeated list of alarms, each a
+/// `memberID` and an `AlarmType`.
 pub(all) struct AlarmResponse {
   header : ResponseHeader
-  alarm : Alarm
+  alarms : Array[Alarm]
 } derive(Eq)
 
 ///|
@@ -174,8 +175,8 @@ pub fn AlarmResponse::encode(self : AlarmResponse) -> Bytes {
   if self.header != ResponseHeader::empty() {
     w.message_(1, self.header.encode())
   }
-  if self.alarm != Alarm::empty() {
-    w.message_(2, self.alarm.encode())
+  for a in self.alarms {
+    w.message_(2, a.encode())
   }
   w.to_bytes()
 }
@@ -185,17 +186,16 @@ pub fn AlarmResponse::decode(
   data : Bytes,
 ) -> AlarmResponse raise @proto.PbError {
   let r = @proto.PbReader::new(data)
-  let mut resp = AlarmResponse::empty()
+  let mut header = ResponseHeader::empty()
+  let alarms : Array[Alarm] = []
   while !r.eof() {
     match r.read_tag() {
-      (1, LengthDelim) =>
-        resp = { ..resp, header: ResponseHeader::decode(r.read_bytes()), }
-      (2, LengthDelim) =>
-        resp = { ..resp, alarm: Alarm::decode(r.read_bytes()), }
+      (1, LengthDelim) => header = ResponseHeader::decode(r.read_bytes())
+      (2, LengthDelim) => alarms.push(Alarm::decode(r.read_bytes()))
       (_, wire) => r.skip(wire)
     }
   }
-  resp
+  { header, alarms, }
 }
 
 ///|
