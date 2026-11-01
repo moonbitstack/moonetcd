@@ -8,5 +8,5 @@
 ///     moon run src/examples/tour
 #coverage.skip
 fn main {
-  println(@CHANGE-ME.greet("moonbit"))
+  println(@moonetcd.greet("moonbit"))
 }

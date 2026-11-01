@@ -1,9 +1,9 @@
-# CHANGE-ME
+# moonetcd
 
-One sentence saying what this is.
+An etcd v3 client for MoonBit: KV, watch, lease, transactions, locks and elections over gRPC.
 
 ```moonbit
-@CHANGE-ME.greet("moonbit")
+@moonetcd.greet("moonbit")
 ```
 
 Run `moon run src/examples/tour` for the whole surface in one go.
@@ -11,7 +11,7 @@ Run `moon run src/examples/tour` for the whole surface in one go.
 ## Starting from this template
 
 1. `gh repo create moonbitstack/<name> --template moonbitstack/moonkit --public`
-2. Replace `CHANGE-ME` everywhere: `moon.mod` (name and repository), the
+2. Replace `moonetcd` everywhere: `moon.mod` (name and repository), the
    `moon.pkg` files and sources that import the library, and this file's title.
 3. The library is the root package in `src/`, so users write `@<name>.f`. Split it
    into subpackages named after what they do (`base64/`, `sha2/`, `jwt/`) only

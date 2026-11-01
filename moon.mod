@@ -1,15 +1,15 @@
-name = "moonbitstack/CHANGE-ME"
+name = "moonbitstack/moonetcd"
 
 version = "0.1.0"
 
 readme = "README.md"
 
-repository = "https://github.com/moonbitstack/CHANGE-ME"
+repository = "https://github.com/moonbitstack/moonetcd"
 
 license = "Apache-2.0"
 
-keywords = [ "moonbit" ]
+keywords = [ "etcd", "grpc", "client", "moonbit" ]
 
-description = "One sentence saying what this is and what it is not."
+description = "An etcd v3 client for MoonBit: KV, watch, lease, transactions, locks and elections over gRPC."
 
 source = "src"

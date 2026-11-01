@@ -7,5 +7,5 @@
 ///     moon run src/cmd/main
 #coverage.skip
 fn main {
-  println(@CHANGE-ME.greet("moonbit"))
+  println(@moonetcd.greet("moonbit"))
 }

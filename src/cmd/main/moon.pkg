@@ -2,5 +2,5 @@
 pkgtype(kind: "executable")
 
 import {
-  "moonbitstack/CHANGE-ME",
+  "moonbitstack/moonetcd",
 }
