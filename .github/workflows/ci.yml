@@ -76,6 +76,8 @@ jobs:
           etcdctl --endpoints=http://127.0.0.1:2379 endpoint health
 
       - name: Integration tests (single node)
+        env:
+          MOONETCD_LIVE: "1"
         run: moon test --target native
 
       - name: Examples (single node)
@@ -125,6 +127,8 @@ jobs:
           test "$members" -eq 3
 
       - name: Integration tests (three-node cluster)
+        env:
+          MOONETCD_LIVE: "1"
         run: moon test --target native
 
       - name: Cluster dump on failure

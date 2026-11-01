@@ -17,6 +17,7 @@ mutexes, leader election).
 | `moonbitstack/moonetcd` | Protobuf message types and codecs for the etcd v3 API, plus key helpers and the error model. Pure data — builds on every target. |
 | `moonbitstack/moonetcd/client` | The gRPC transport: `Client`, `KV`, `Watch`, `Lease`, `Cluster`, `Auth`, `Maintenance`, `Lock`, `Election`. Native only. |
 | `moonbitstack/moonetcd/concurrency` | `Session`, `Mutex`, `Election` built on the client. Native only. |
+| `moonbitstack/moonetcd/sd` | The `moonsd` contract on etcd: `Registry`. Native only. |
 | `moonbitstack/moonetcd/examples/...` | Runnable examples (see below). |
 
 The root package carries no transport, so a program on any target can decode etcd
@@ -163,6 +164,18 @@ session.close()                                         // revokes the lease
 - `Mutex` is a distributed lock over `v3lock`, held on the session's lease, so it is
   released automatically if the holder dies.
 - `Election` campaigns, proclaims, and resigns over `v3election`.
+
+## Service discovery
+
+`moonetcd/sd` implements the `moonsd` contract on etcd. An endpoint is a key on a lease, so it goes when the lease does, and a watcher follows etcd's revisions. A watch that compaction or a dropped connection ends costs one more read.
+
+```moonbit
+let registry = @sd.Registry::new(client)
+group.spawn_bg(() => @moonsd.hold(registry, "greeter", @moonsd.Endpoint::new("10.0.0.1", 12000)))
+let endpoints = registry.resolve("greeter")
+```
+
+`Registry::new` takes `prefix`, default `/moonsd`. A lease lasts whole seconds, and the server sets a minimum, so a short `ttl` is rounded up. Any number of tasks may share one registry and its client.
 
 ## Errors
 

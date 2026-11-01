@@ -1,0 +1,12 @@
+// `moonsd` on etcd: endpoints as keys on leases.
+import {
+  "moonbitstack/moonetcd",
+  "moonbitstack/moonetcd/client",
+  "moonbitstack/moonsd",
+  "moonbitlang/async",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
+}
+
+supported_targets = "native"
