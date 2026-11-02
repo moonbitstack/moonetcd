@@ -510,7 +510,6 @@ pub fn DowngradeRequest::not_equal(Self, Self) -> Bool
 pub(all) struct DowngradeResponse {
   header : ResponseHeader
   version : String
-  enabled : Bool
 } derive(Eq)
 pub fn DowngradeResponse::decode(Bytes) -> Self raise @proto.PbError
 pub fn DowngradeResponse::empty() -> Self
@@ -551,7 +550,7 @@ pub(all) struct HashKVResponse {
   header : ResponseHeader
   hash : UInt32
   compact_revision : Int64
-  revision : Int64
+  hash_revision : Int64
 } derive(Eq)
 pub fn HashKVResponse::decode(Bytes) -> Self raise @proto.PbError
 pub fn HashKVResponse::empty() -> Self
@@ -562,8 +561,6 @@ pub fn HashKVResponse::not_equal(Self, Self) -> Bool
 pub(all) struct HashResponse {
   header : ResponseHeader
   hash : UInt32
-  compact_revision : Int64
-  revision : Int64
 } derive(Eq)
 pub fn HashResponse::decode(Bytes) -> Self raise @proto.PbError
 pub fn HashResponse::empty() -> Self
@@ -732,7 +729,6 @@ pub fn LockRequest::not_equal(Self, Self) -> Bool
 pub(all) struct LockResponse {
   header : ResponseHeader
   key : Bytes
-  lease : Int64
 } derive(Eq)
 pub fn LockResponse::decode(Bytes) -> Self raise @proto.PbError
 pub fn LockResponse::empty() -> Self
@@ -872,7 +868,6 @@ pub(all) struct Permission {
   key : Bytes
   range_end : Bytes
   perm_type : PermissionType
-  name : String
 } derive(Eq)
 pub fn Permission::decode(Bytes) -> Self raise @proto.PbError
 pub fn Permission::empty() -> Self
@@ -947,7 +942,6 @@ pub(all) struct RangeRequest {
   max_mod_revision : Int64
   min_create_revision : Int64
   max_create_revision : Int64
-  progress_notify : Bool
 } derive(Eq)
 pub fn RangeRequest::decode(Bytes) -> Self raise @proto.PbError
 pub fn RangeRequest::empty() -> Self
@@ -1127,7 +1121,6 @@ pub fn UnlockRequest::not_equal(Self, Self) -> Bool
 
 pub(all) struct UnlockResponse {
   header : ResponseHeader
-  key : Bytes
 } derive(Eq)
 pub fn UnlockResponse::decode(Bytes) -> Self raise @proto.PbError
 pub fn UnlockResponse::empty() -> Self
@@ -1193,14 +1186,14 @@ pub(all) struct WatchResponse {
   canceled : Bool
   events : Array[Event]
   compact_revision : Int64
-  canceled_reason : String
+  cancel_reason : String
   fragment : Bool
-  progress_notify : Bool
 } derive(Eq)
 pub fn WatchResponse::decode(Bytes) -> Self raise @proto.PbError
 pub fn WatchResponse::empty() -> Self
 pub fn WatchResponse::encode(Self) -> Bytes
 pub fn WatchResponse::equal(Self, Self) -> Bool
+pub fn WatchResponse::is_progress_notify(Self) -> Bool
 pub fn WatchResponse::not_equal(Self, Self) -> Bool
 
 // Type aliases

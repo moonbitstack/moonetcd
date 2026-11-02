@@ -146,7 +146,6 @@ pub(all) struct RangeRequest {
   max_mod_revision : Int64
   min_create_revision : Int64
   max_create_revision : Int64
-  progress_notify : Bool
 } derive(Eq)
 
 ///|
@@ -168,7 +167,6 @@ pub fn RangeRequest::empty() -> RangeRequest {
     max_mod_revision: 0,
     min_create_revision: 0,
     max_create_revision: 0,
-    progress_notify: false,
   }
 }
 
@@ -214,9 +212,6 @@ pub fn RangeRequest::encode(self : RangeRequest) -> Bytes {
   if self.max_create_revision != 0 {
     w.int64(13, self.max_create_revision)
   }
-  if self.progress_notify {
-    w.bool_(14, self.progress_notify)
-  }
   w.to_bytes()
 }
 
@@ -241,7 +236,6 @@ pub fn RangeRequest::decode(data : Bytes) -> RangeRequest raise @proto.PbError {
       (11, Varint) => req = { ..req, max_mod_revision: r.read_int64(), }
       (12, Varint) => req = { ..req, min_create_revision: r.read_int64(), }
       (13, Varint) => req = { ..req, max_create_revision: r.read_int64(), }
-      (14, Varint) => req = { ..req, progress_notify: r.read_bool(), }
       (_, wire) => r.skip(wire)
     }
   }

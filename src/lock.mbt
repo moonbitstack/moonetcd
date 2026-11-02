@@ -44,16 +44,14 @@ pub fn LockRequest::decode(data : Bytes) -> LockRequest raise @proto.PbError {
 
 ///|
 pub fn LockResponse::empty() -> LockResponse {
-  { header: ResponseHeader::empty(), key: b"", lease: 0, }
+  { header: ResponseHeader::empty(), key: b"", }
 }
 
 ///|
-/// The lock is held while `key` exists; `lease` is the lease that guards it
-/// (`v3lock.LockResponse`).
+/// The lock is held while `key` exists (`v3lock.LockResponse`).
 pub(all) struct LockResponse {
   header : ResponseHeader
   key : Bytes
-  lease : Int64
 } derive(Eq)
 
 ///|
@@ -68,9 +66,6 @@ pub fn LockResponse::encode(self : LockResponse) -> Bytes {
   if self.key.length() > 0 {
     w.bytes_(2, self.key)
   }
-  if self.lease != 0 {
-    w.int64(3, self.lease)
-  }
   w.to_bytes()
 }
 
@@ -83,7 +78,6 @@ pub fn LockResponse::decode(data : Bytes) -> LockResponse raise @proto.PbError {
       (1, LengthDelim) =>
         resp = { ..resp, header: ResponseHeader::decode(r.read_bytes()), }
       (2, LengthDelim) => resp = { ..resp, key: r.read_bytes(), }
-      (3, Varint) => resp = { ..resp, lease: r.read_int64(), }
       (_, wire) => r.skip(wire)
     }
   }
@@ -130,14 +124,13 @@ pub fn UnlockRequest::decode(
 
 ///|
 pub fn UnlockResponse::empty() -> UnlockResponse {
-  { header: ResponseHeader::empty(), key: b"", }
+  { header: ResponseHeader::empty(), }
 }
 
 ///|
-/// The released lock's key (`v3lock.UnlockResponse`).
+/// The header of a released lock (`v3lock.UnlockResponse`).
 pub(all) struct UnlockResponse {
   header : ResponseHeader
-  key : Bytes
 } derive(Eq)
 
 ///|
@@ -148,9 +141,6 @@ pub fn UnlockResponse::encode(self : UnlockResponse) -> Bytes {
   let w = @proto.PbWriter::new()
   if self.header != ResponseHeader::empty() {
     w.message_(1, self.header.encode())
-  }
-  if self.key.length() > 0 {
-    w.bytes_(2, self.key)
   }
   w.to_bytes()
 }
@@ -164,8 +154,7 @@ pub fn UnlockResponse::decode(
   while !r.eof() {
     match r.read_tag() {
       (1, LengthDelim) =>
-        resp = { ..resp, header: ResponseHeader::decode(r.read_bytes()), }
-      (2, LengthDelim) => resp = { ..resp, key: r.read_bytes(), }
+        resp = { header: ResponseHeader::decode(r.read_bytes()), }
       (_, wire) => r.skip(wire)
     }
   }

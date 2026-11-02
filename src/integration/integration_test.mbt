@@ -1,7 +1,7 @@
 // Integration tests against a live etcd at 127.0.0.1:2379. `try_connect` probes the
-// member and returns `None` when nothing answers, so these tests are a no-op on a
-// machine without etcd and a real exercise of the client in CI. Every test uses its
-// own key prefix so runs do not collide.
+// member and returns `None` when nothing answers, so these tests are a no-op on a machine
+// without etcd; with `MOONETCD_LIVE` set, as in CI, a missing server fails them. Every test
+// uses its own key prefix so runs do not collide.
 //
 // These cover KV, Txn, Lease, Watch, Cluster, Auth, Maintenance and the v3election
 // service against a real etcd, which is where wire field-number mistakes surface.
@@ -23,6 +23,9 @@ async fn try_connect() -> @client.Client? {
     Some(c)
   } else {
     c.close()
+    if @env.get_env_var("MOONETCD_LIVE") is Some(_) {
+      fail("no etcd on 2379")
+    }
     None
   }
 }

@@ -14,7 +14,7 @@ description = "An etcd v3 client for MoonBit."
 
 import {
   "moonbitstack/moonsd@0.1.0",
-  "moonbitstack/moonrpc@0.21.7",
+  "moonbitstack/moonrpc@0.21.8",
   "moonbitstack/moonhttp@0.15.4",
   "moonbitlang/async@0.22.5",
 }

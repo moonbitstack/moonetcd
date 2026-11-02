@@ -7,9 +7,16 @@ supported_targets = "native"
 import {
   "moonbitstack/moonetcd",
   "moonbitstack/moonetcd/client",
+  "moonbitstack/moonetcd/concurrency",
   "moonbitstack/moonetcd/sd",
   "moonbitstack/moonsd",
   "moonbitstack/moonsd/conformance",
   "moonbitlang/async",
+  "moonbitlang/async/process",
+  "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/env",
 } for "test"
+
+// Compaction and a dying member reach every test on the cluster, so these go one at a time.
+
+max_concurrent_tests = 1

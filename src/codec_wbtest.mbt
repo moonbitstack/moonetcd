@@ -134,7 +134,6 @@ test "kv: RangeRequest round-trips" {
     max_mod_revision: 2L,
     min_create_revision: 3L,
     max_create_revision: 4L,
-    progress_notify: true,
   }
   assert_eq(RangeRequest::decode(r.encode()).encode(), r.encode())
 }
@@ -353,9 +352,8 @@ test "watch: WatchResponse round-trips" {
     canceled: true,
     events: [ev],
     compact_revision: 3L,
-    canceled_reason: "because",
+    cancel_reason: "because",
     fragment: true,
-    progress_notify: true,
   }
   assert_eq(WatchResponse::decode(r.encode()).encode(), r.encode())
 }
@@ -446,7 +444,7 @@ test "cluster: MemberAddRequest / MemberAddResponse round-trip" {
 
 ///|
 test "auth: Permission round-trips" {
-  let p = { key: b"k", range_end: b"r", perm_type: ReadWrite, name: "role", }
+  let p = { key: b"k", range_end: b"r", perm_type: ReadWrite, }
   assert_eq(Permission::decode(p.encode()).encode(), p.encode())
 }
 
@@ -468,7 +466,7 @@ test "auth: AuthenticateRequest round-trips" {
 test "lock: LockRequest / LockResponse round-trip" {
   let req = { name: b"mylock", lease: 5L, }
   assert_eq(LockRequest::decode(req.encode()).encode(), req.encode())
-  let resp = { header: ResponseHeader::empty(), key: b"lockkey", lease: 5L, }
+  let resp = { header: ResponseHeader::empty(), key: b"lockkey", }
   assert_eq(LockResponse::decode(resp.encode()).encode(), resp.encode())
 }
 
@@ -476,7 +474,7 @@ test "lock: LockRequest / LockResponse round-trip" {
 test "lock: UnlockRequest / UnlockResponse round-trip" {
   let req = { key: b"lockkey", }
   assert_eq(UnlockRequest::decode(req.encode()).encode(), req.encode())
-  let resp : UnlockResponse = { header: ResponseHeader::empty(), key: b"", }
+  let resp : UnlockResponse = { header: ResponseHeader::empty(), }
   assert_eq(UnlockResponse::decode(resp.encode()).encode(), resp.encode())
 }
 
@@ -524,4 +522,18 @@ test "kv: Compare encodes etcd's real field numbers" {
   }
   let expected : Bytes = b"\x08\x00\x10\x03\x1a\x01\x6b\x82\x04\x01\x7a\x3a\x01\x76"
   assert_eq(c.encode(), expected)
+}
+
+///|
+test "watch: a progress notification is a header and nothing else" {
+  assert_true(WatchResponse::empty().is_progress_notify())
+  assert_false(
+    { ..WatchResponse::empty(), created: true, }.is_progress_notify(),
+  )
+  assert_false(
+    { ..WatchResponse::empty(), canceled: true, }.is_progress_notify(),
+  )
+  assert_false(
+    { ..WatchResponse::empty(), compact_revision: 3, }.is_progress_notify(),
+  )
 }

@@ -220,9 +220,8 @@ pub(all) struct WatchResponse {
   canceled : Bool
   events : Array[Event]
   compact_revision : Int64
-  canceled_reason : String
+  cancel_reason : String
   fragment : Bool
-  progress_notify : Bool
 } derive(Eq)
 
 ///|
@@ -237,9 +236,8 @@ pub fn WatchResponse::empty() -> WatchResponse {
     canceled: false,
     events: [],
     compact_revision: 0,
-    canceled_reason: "",
+    cancel_reason: "",
     fragment: false,
-    progress_notify: false,
   }
 }
 
@@ -262,16 +260,13 @@ pub fn WatchResponse::encode(self : WatchResponse) -> Bytes {
     w.message_(11, ev.encode())
   }
   if self.compact_revision != 0 {
-    w.int64(12, self.compact_revision)
+    w.int64(5, self.compact_revision)
   }
-  if self.canceled_reason.length() > 0 {
-    w.string_(13, self.canceled_reason)
+  if self.cancel_reason.length() > 0 {
+    w.string_(6, self.cancel_reason)
   }
   if self.fragment {
-    w.bool_(14, self.fragment)
-  }
-  if self.progress_notify {
-    w.bool_(15, self.progress_notify)
+    w.bool_(7, self.fragment)
   }
   w.to_bytes()
 }
@@ -290,12 +285,21 @@ pub fn WatchResponse::decode(
       (3, Varint) => resp = { ..resp, created: r.read_bool(), }
       (4, Varint) => resp = { ..resp, canceled: r.read_bool(), }
       (11, LengthDelim) => resp.events.push(Event::decode(r.read_bytes()))
-      (12, Varint) => resp = { ..resp, compact_revision: r.read_int64(), }
-      (13, LengthDelim) => resp = { ..resp, canceled_reason: r.read_string(), }
-      (14, Varint) => resp = { ..resp, fragment: r.read_bool(), }
-      (15, Varint) => resp = { ..resp, progress_notify: r.read_bool(), }
+      (5, Varint) => resp = { ..resp, compact_revision: r.read_int64(), }
+      (6, LengthDelim) => resp = { ..resp, cancel_reason: r.read_string(), }
+      (7, Varint) => resp = { ..resp, fragment: r.read_bool(), }
       (_, wire) => r.skip(wire)
     }
   }
   resp
+}
+
+///|
+/// Whether this answer is a progress notification: a revision with nothing else in it, which
+/// is how the wire says so.
+pub fn WatchResponse::is_progress_notify(self : WatchResponse) -> Bool {
+  !self.created &&
+  !self.canceled &&
+  self.compact_revision == 0 &&
+  self.events.is_empty()
 }

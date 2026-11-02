@@ -38,7 +38,6 @@ pub(all) struct Permission {
   key : Bytes
   range_end : Bytes
   perm_type : PermissionType
-  name : String
 } derive(Eq)
 
 ///|
@@ -46,23 +45,20 @@ pub extend Permission with Eq::{not_equal, equal}
 
 ///|
 pub fn Permission::empty() -> Permission {
-  { key: b"", range_end: b"", perm_type: Read, name: "", }
+  { key: b"", range_end: b"", perm_type: Read, }
 }
 
 ///|
 pub fn Permission::encode(self : Permission) -> Bytes {
   let w = @proto.PbWriter::new()
+  if self.perm_type.to_int() != 0 {
+    w.enum_(1, self.perm_type.to_int())
+  }
   if self.key.length() > 0 {
-    w.bytes_(1, self.key)
+    w.bytes_(2, self.key)
   }
   if self.range_end.length() > 0 {
-    w.bytes_(2, self.range_end)
-  }
-  if self.perm_type.to_int() != 0 {
-    w.enum_(3, self.perm_type.to_int())
-  }
-  if self.name.length() > 0 {
-    w.string_(4, self.name)
+    w.bytes_(3, self.range_end)
   }
   w.to_bytes()
 }
@@ -73,11 +69,10 @@ pub fn Permission::decode(data : Bytes) -> Permission raise @proto.PbError {
   let mut p = Permission::empty()
   while !r.eof() {
     match r.read_tag() {
-      (1, LengthDelim) => p = { ..p, key: r.read_bytes(), }
-      (2, LengthDelim) => p = { ..p, range_end: r.read_bytes(), }
-      (3, Varint) =>
+      (1, Varint) =>
         p = { ..p, perm_type: PermissionType::from_int(r.read_int32()), }
-      (4, LengthDelim) => p = { ..p, name: r.read_string(), }
+      (2, LengthDelim) => p = { ..p, key: r.read_bytes(), }
+      (3, LengthDelim) => p = { ..p, range_end: r.read_bytes(), }
       (_, wire) => r.skip(wire)
     }
   }

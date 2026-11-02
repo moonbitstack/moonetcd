@@ -69,7 +69,7 @@ Lease KeepAlive opens its own multiplexed connection so it can reconnect on its 
 
 `RangeRequest` carries every lever of the gRPC message — `range_end`, `limit`,
 `revision`, `sort_order`, `sort_target`, `serializable`, `keys_only`, `count_only`,
-the four `min`/`max` revision bounds, and `progress_notify`.
+and the four `min`/`max` revision bounds.
 
 ### Watch — `client.watch()`
 
@@ -203,8 +203,10 @@ to compaction or a future revision without scraping text.
 | `keep_alive_millis` | HTTP/2 keep-alive interval. |
 | `tls` | TLS settings (see the note below). |
 
-Multiple endpoints are load-balanced and failed over by the underlying channel. A
-Watch or KeepAlive reconnects to the next endpoint if its connection drops.
+Multiple endpoints are load-balanced and failed over by the underlying channel. When a member
+dies under a call, a read goes again on the next member; a write answers `UNAVAILABLE`, since
+it may have run, and the next call goes to a member that is up. A Watch reconnects to the next
+endpoint and carries on from the revision after the last one it saw.
 
 ## Examples
 
@@ -215,6 +217,7 @@ Each example is a runnable `moon run` target. They expect etcd at
 ```sh
 moon run --target native src/examples/00-connect   # dial and print member status
 moon run --target native src/examples/01-kv        # put / get / prefix scan / delete
+moon run --target native src/examples/02-watch     # watch a key and read the event
 moon run --target native src/examples/03-lease     # grant a lease, attach a key, revoke
 moon run --target native src/examples/04-txn       # compare-and-swap with a transaction
 moon run --target native src/examples/05-lock      # distributed mutex over a session
@@ -229,11 +232,16 @@ moon test  --target all
 moon info  --target all
 ```
 
-The protobuf codecs have network-free round-trip tests that run on every target. The
-transport has an in-process test that drives the real HTTP/2 engine over a loopback
-socket against a stand-in gRPC server, so the unary path is checked without an etcd
-binary. The CI additionally starts a real etcd (single node and a three-node cluster)
-and runs the examples against it.
+The protobuf codecs have network-free round-trip tests that run on every target, and
+`scripts/check_field_numbers.py` compares every field number with etcd's own `.proto` files,
+which a round trip cannot do. The transport has an in-process test that drives the real HTTP/2
+engine over a loopback socket against a stand-in gRPC server.
+
+`src/integration` runs against a real etcd: leases lapsing, locks and elections changing hands,
+compaction, roles and tokens, a snapshot, and many tasks sharing one client. `scripts/etcd_cluster.sh`
+starts three members, and with `MOONETCD_MEMBERS` naming it the suite kills one under a watch and
+under plain calls. Without a server the tests return early; with `MOONETCD_LIVE` set, as in CI,
+a missing server fails them.
 
 ## Notes
 

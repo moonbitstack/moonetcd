@@ -1,27 +1,6 @@
-// Against the etcd CI starts on 2379. Without one these return at the probe, unless
-// `MOONETCD_LIVE` says a server is expected, so a job that lost its server cannot pass.
-
 ///|
 async fn open_sd() -> @client.Client? {
-  let client = @client.Client::connect({
-    ..@moonetcd.default_client_config,
-    endpoints: ["127.0.0.1:2379"],
-  })
-  let up = try {
-    ignore(client.maintenance().status())
-    true
-  } catch {
-    _ => false
-  }
-  if up {
-    Some(client)
-  } else {
-    client.close()
-    if @env.get_env_var("MOONETCD_LIVE") is Some(_) {
-      fail("no etcd on 2379")
-    }
-    None
-  }
+  try_connect()
 }
 
 ///|

@@ -241,10 +241,10 @@ pub fn SnapshotResponse::encode(self : SnapshotResponse) -> Bytes {
     w.message_(1, self.header.encode())
   }
   if self.blob.length() > 0 {
-    w.bytes_(2, self.blob)
+    w.bytes_(3, self.blob)
   }
   if self.remaining_bytes != 0 {
-    w.int64(3, self.remaining_bytes)
+    w.int64(2, self.remaining_bytes)
   }
   w.to_bytes()
 }
@@ -259,8 +259,8 @@ pub fn SnapshotResponse::decode(
     match r.read_tag() {
       (1, LengthDelim) =>
         resp = { ..resp, header: ResponseHeader::decode(r.read_bytes()), }
-      (2, LengthDelim) => resp = { ..resp, blob: r.read_bytes(), }
-      (3, Varint) => resp = { ..resp, remaining_bytes: r.read_int64(), }
+      (3, LengthDelim) => resp = { ..resp, blob: r.read_bytes(), }
+      (2, Varint) => resp = { ..resp, remaining_bytes: r.read_int64(), }
       (_, wire) => r.skip(wire)
     }
   }
@@ -272,8 +272,6 @@ pub fn SnapshotResponse::decode(
 pub(all) struct HashResponse {
   header : ResponseHeader
   hash : UInt32
-  compact_revision : Int64
-  revision : Int64
 } derive(Eq)
 
 ///|
@@ -281,12 +279,7 @@ pub extend HashResponse with Eq::{not_equal, equal}
 
 ///|
 pub fn HashResponse::empty() -> HashResponse {
-  {
-    header: ResponseHeader::empty(),
-    hash: 0,
-    compact_revision: 0,
-    revision: 0,
-  }
+  { header: ResponseHeader::empty(), hash: 0, }
 }
 
 ///|
@@ -297,12 +290,6 @@ pub fn HashResponse::encode(self : HashResponse) -> Bytes {
   }
   if self.hash != 0 {
     w.uint32(2, self.hash)
-  }
-  if self.compact_revision != 0 {
-    w.int64(3, self.compact_revision)
-  }
-  if self.revision != 0 {
-    w.int64(4, self.revision)
   }
   w.to_bytes()
 }
@@ -316,8 +303,6 @@ pub fn HashResponse::decode(data : Bytes) -> HashResponse raise @proto.PbError {
       (1, LengthDelim) =>
         resp = { ..resp, header: ResponseHeader::decode(r.read_bytes()), }
       (2, Varint) => resp = { ..resp, hash: r.read_uint32(), }
-      (3, Varint) => resp = { ..resp, compact_revision: r.read_int64(), }
-      (4, Varint) => resp = { ..resp, revision: r.read_int64(), }
       (_, wire) => r.skip(wire)
     }
   }
@@ -330,7 +315,7 @@ pub fn HashKVResponse::empty() -> HashKVResponse {
     header: ResponseHeader::empty(),
     hash: 0,
     compact_revision: 0,
-    revision: 0,
+    hash_revision: 0,
   }
 }
 
@@ -340,7 +325,7 @@ pub(all) struct HashKVResponse {
   header : ResponseHeader
   hash : UInt32
   compact_revision : Int64
-  revision : Int64
+  hash_revision : Int64
 } derive(Eq)
 
 ///|
@@ -358,8 +343,8 @@ pub fn HashKVResponse::encode(self : HashKVResponse) -> Bytes {
   if self.compact_revision != 0 {
     w.int64(3, self.compact_revision)
   }
-  if self.revision != 0 {
-    w.int64(4, self.revision)
+  if self.hash_revision != 0 {
+    w.int64(4, self.hash_revision)
   }
   w.to_bytes()
 }
@@ -376,7 +361,7 @@ pub fn HashKVResponse::decode(
         resp = { ..resp, header: ResponseHeader::decode(r.read_bytes()), }
       (2, Varint) => resp = { ..resp, hash: r.read_uint32(), }
       (3, Varint) => resp = { ..resp, compact_revision: r.read_int64(), }
-      (4, Varint) => resp = { ..resp, revision: r.read_int64(), }
+      (4, Varint) => resp = { ..resp, hash_revision: r.read_int64(), }
       (_, wire) => r.skip(wire)
     }
   }
@@ -663,7 +648,7 @@ pub fn DowngradeRequest::decode(
 
 ///|
 pub fn DowngradeResponse::empty() -> DowngradeResponse {
-  { header: ResponseHeader::empty(), version: "", enabled: false, }
+  { header: ResponseHeader::empty(), version: "", }
 }
 
 ///|
@@ -671,7 +656,6 @@ pub fn DowngradeResponse::empty() -> DowngradeResponse {
 pub(all) struct DowngradeResponse {
   header : ResponseHeader
   version : String
-  enabled : Bool
 } derive(Eq)
 
 ///|
@@ -685,9 +669,6 @@ pub fn DowngradeResponse::encode(self : DowngradeResponse) -> Bytes {
   }
   if self.version.length() > 0 {
     w.string_(2, self.version)
-  }
-  if self.enabled {
-    w.bool_(3, self.enabled)
   }
   w.to_bytes()
 }
@@ -703,7 +684,6 @@ pub fn DowngradeResponse::decode(
       (1, LengthDelim) =>
         resp = { ..resp, header: ResponseHeader::decode(r.read_bytes()), }
       (2, LengthDelim) => resp = { ..resp, version: r.read_string(), }
-      (3, Varint) => resp = { ..resp, enabled: r.read_bool(), }
       (_, wire) => r.skip(wire)
     }
   }

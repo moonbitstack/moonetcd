@@ -117,22 +117,20 @@ pub fn Client::endpoint_at(self : Client, i : Int32) -> (String, Int32) {
 }
 
 ///|
-/// Turn a non-OK gRPC status into an `EtcdError`. etcd reports a compacted or future
-/// revision through a `FAILED_PRECONDITION` / `OUT_OF_RANGE` status whose message names
-/// the revision, which we surface as `Compacted` / `FutureRev` exactly as clientv3 does.
+/// Turn a non-OK gRPC status into an `EtcdError`. Both revision errors share `OUT_OF_RANGE`, and
+/// the lock and election services send them as `UNKNOWN`, so clientv3 tells them apart by the
+/// text and so does this.
 fn map_error(status : @wire.Status, message : String) -> EtcdError {
-  let code = status.code()
-  let compacted = code == @wire.Status::FailedPrecondition.code() &&
-    message.contains("required revision has been compacted")
-  if compacted {
+  if message.contains("required revision has been compacted") {
     return @moonetcd.EtcdError::Compacted(extract_rev(message))
   }
-  let future = code == @wire.Status::OutOfRange.code() &&
-    message.contains("required revision is a future revision")
-  if future {
+  if message.contains("required revision is a future revision") {
     return @moonetcd.EtcdError::FutureRev(extract_rev(message))
   }
-  @moonetcd.EtcdError::Refused(@moonetcd.Status::{ code, message, })
+  @moonetcd.EtcdError::Refused(@moonetcd.Status::{
+    code: status.code(),
+    message,
+  })
 }
 
 ///|
@@ -178,6 +176,18 @@ fn transport_error(what : String) -> EtcdError {
 }
 
 ///|
+/// gRPC's `UNAVAILABLE`, which the channel answers with when a connection dies under a call.
+let unavailable : Int32 = 14
+
+///|
+/// The calls that change nothing, which clientv3 calls repeatable: when the connection dies
+/// under one, it can go again on the next member. A write cannot, since it may have run.
+let repeatable : Array[String] = [
+  "/etcdserverpb.KV/Range", "/etcdserverpb.Lease/LeaseTimeToLive", "/etcdserverpb.Lease/LeaseLeases",
+  "/etcdserverpb.Cluster/MemberList", "/etcdserverpb.Maintenance/Status", "/etcdserverpb.Maintenance/Alarm",
+]
+
+///|
 /// One unary RPC: send `body` to `path` with the auth metadata, decode the single
 /// reply with `decode`, and translate any transport or decode failure into `EtcdError`.
 async fn[R] Client::rpc(
@@ -188,13 +198,30 @@ async fn[R] Client::rpc(
   timeout? : Int32,
 ) -> R raise EtcdError {
   let md = self.metadata()
-  let reply = try {
+  let attempts = if repeatable.contains(path) {
+    self.endpoint_count()
+  } else {
+    1
+  }
+  let mut reply = try {
     match timeout {
       Some(ms) => self.channel.unary(path, body, metadata=md, timeout_millis=ms)
       None => self.channel.unary(path, body, metadata=md)
     }
   } catch {
     _ => raise transport_error(path)
+  }
+  for _ in 1..<attempts {
+    guard reply.grpc_status == unavailable else { break }
+    reply = try {
+      match timeout {
+        Some(ms) =>
+          self.channel.unary(path, body, metadata=md, timeout_millis=ms)
+        None => self.channel.unary(path, body, metadata=md)
+      }
+    } catch {
+      _ => raise transport_error(path)
+    }
   }
   let msgs = reply.ok() catch {
     @wire.StatusError(s, m) => raise map_error(s, m)
