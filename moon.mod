@@ -1,6 +1,6 @@
 name = "moonbitstack/moonetcd"
 
-version = "0.1.0"
+version = "0.1.1"
 
 readme = "README.md"
 
@@ -8,7 +8,23 @@ repository = "https://github.com/moonbitstack/moonetcd"
 
 license = "Apache-2.0"
 
-keywords = [ "etcd", "etcdv3", "client", "moonbit", "grpc" ]
+keywords = [
+  "etcd",
+  "etcdv3",
+  "client",
+  "grpc",
+  "kv",
+  "key-value",
+  "watch",
+  "lease",
+  "lock",
+  "distributed-lock",
+  "election",
+  "leader-election",
+  "transaction",
+  "service-discovery",
+  "moonbit",
+]
 
 description = "An etcd v3 client for MoonBit."
 
