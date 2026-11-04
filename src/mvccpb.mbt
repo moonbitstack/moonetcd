@@ -6,6 +6,7 @@
 /// An etcd key/value (`mvccpb.KeyValue`): the key and value as raw bytes, the
 /// create/mod revisions and version that track its history, and the lease it is
 /// attached to.
+#derive(Eq)
 pub(all) struct KeyValue {
   key : Bytes
   create_revision : Int64
@@ -13,7 +14,7 @@ pub(all) struct KeyValue {
   version : Int64
   value : Bytes
   lease : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend KeyValue with Eq::{not_equal, equal}
@@ -95,10 +96,11 @@ pub fn KeyValue::decode(data : Bytes) -> KeyValue raise @proto.PbError {
 ///|
 /// The kind of change a watch `Event` reports (`mvccpb.Event.EventType`): a key was
 /// `Put` (created or updated) or `Delete`d. `PUT` (0) is the proto3 default.
+#derive(Eq)
 pub(all) enum EventType {
   Put = 0
   Delete = 1
-} derive(Eq)
+}
 
 ///|
 pub extend EventType with Eq::{not_equal, equal}
@@ -125,11 +127,12 @@ pub fn EventType::from_int(n : Int32) -> EventType {
 ///|
 /// A watch `Event` (`mvccpb.Event`): one change to one key, carrying the resulting
 /// `KeyValue` and, when the request asked for it, the previous one.
+#derive(Eq)
 pub(all) struct Event {
   event_type : EventType
   kv : KeyValue
   prev_kv : KeyValue
-} derive(Eq)
+}
 
 ///|
 pub extend Event with Eq::{not_equal, equal}

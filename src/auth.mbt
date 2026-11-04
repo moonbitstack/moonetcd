@@ -3,11 +3,12 @@
 
 ///|
 /// The kind of access a `Permission` grants (`etcdserverpb.Permission.Type`).
+#derive(Eq)
 pub(all) enum PermissionType {
   Read = 0
   Write = 1
   ReadWrite = 2
-} derive(Eq)
+}
 
 ///|
 pub extend PermissionType with Eq::{not_equal, equal}
@@ -34,11 +35,12 @@ pub fn PermissionType::from_int(n : Int32) -> PermissionType {
 
 ///|
 /// A grant over `[key, range_end)` (`etcdserverpb.Permission`).
+#derive(Eq)
 pub(all) struct Permission {
   key : Bytes
   range_end : Bytes
   perm_type : PermissionType
-} derive(Eq)
+}
 
 ///|
 pub extend Permission with Eq::{not_equal, equal}
@@ -86,9 +88,10 @@ pub fn AuthEnableResponse::empty() -> AuthEnableResponse {
 
 ///|
 /// Enable authentication (`etcdserverpb.AuthEnableResponse`).
+#derive(Eq)
 pub(all) struct AuthEnableResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend AuthEnableResponse with Eq::{not_equal, equal}
@@ -124,9 +127,10 @@ pub fn AuthDisableResponse::empty() -> AuthDisableResponse {
 
 ///|
 /// Disable authentication (`etcdserverpb.AuthDisableResponse`).
+#derive(Eq)
 pub(all) struct AuthDisableResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend AuthDisableResponse with Eq::{not_equal, equal}
@@ -163,11 +167,12 @@ pub fn AuthStatusResponse::empty() -> AuthStatusResponse {
 ///|
 /// Whether authentication is on and the current auth revision
 /// (`etcdserverpb.AuthStatusResponse`).
+#derive(Eq)
 pub(all) struct AuthStatusResponse {
   header : ResponseHeader
   enabled : Bool
   auth_revision : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend AuthStatusResponse with Eq::{not_equal, equal}
@@ -207,10 +212,11 @@ pub fn AuthStatusResponse::decode(
 
 ///|
 /// Exchange a name and password for a token (`etcdserverpb.AuthenticateRequest`).
+#derive(Eq)
 pub(all) struct AuthenticateRequest {
   name : String
   password : String
-} derive(Eq)
+}
 
 ///|
 pub extend AuthenticateRequest with Eq::{not_equal, equal}
@@ -255,10 +261,11 @@ pub fn AuthenticateResponse::empty() -> AuthenticateResponse {
 
 ///|
 /// The issued token (`etcdserverpb.AuthenticateResponse`).
+#derive(Eq)
 pub(all) struct AuthenticateResponse {
   header : ResponseHeader
   token : String
-} derive(Eq)
+}
 
 ///|
 pub extend AuthenticateResponse with Eq::{not_equal, equal}
@@ -299,9 +306,10 @@ pub fn UserAddOptions::empty() -> UserAddOptions {
 
 ///|
 /// Options for adding a user (`etcdserverpb.UserAddOptions`).
+#derive(Eq)
 pub(all) struct UserAddOptions {
   no_password : Bool
-} derive(Eq)
+}
 
 ///|
 pub extend UserAddOptions with Eq::{not_equal, equal}
@@ -332,11 +340,12 @@ pub fn UserAddOptions::decode(
 
 ///|
 /// Add a user (`etcdserverpb.AuthUserAddRequest`).
+#derive(Eq)
 pub(all) struct AuthUserAddRequest {
   name : String
   password : String
   options : UserAddOptions
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserAddRequest with Eq::{not_equal, equal}
@@ -386,9 +395,10 @@ pub fn AuthUserAddResponse::empty() -> AuthUserAddResponse {
 
 ///|
 /// Added-user reply (`etcdserverpb.AuthUserAddResponse`).
+#derive(Eq)
 pub(all) struct AuthUserAddResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserAddResponse with Eq::{not_equal, equal}
@@ -419,9 +429,10 @@ pub fn AuthUserAddResponse::decode(
 
 ///|
 /// Fetch a user's roles (`etcdserverpb.AuthUserGetRequest`).
+#derive(Eq)
 pub(all) struct AuthUserGetRequest {
   name : String
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserGetRequest with Eq::{not_equal, equal}
@@ -462,10 +473,11 @@ pub fn AuthUserGetResponse::empty() -> AuthUserGetResponse {
 
 ///|
 /// A user's roles (`etcdserverpb.AuthUserGetResponse`).
+#derive(Eq)
 pub(all) struct AuthUserGetResponse {
   header : ResponseHeader
   roles : Array[String]
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserGetResponse with Eq::{not_equal, equal}
@@ -506,10 +518,11 @@ pub fn AuthUserListResponse::empty() -> AuthUserListResponse {
 
 ///|
 /// All user names (`etcdserverpb.AuthUserListResponse`).
+#derive(Eq)
 pub(all) struct AuthUserListResponse {
   header : ResponseHeader
   users : Array[String]
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserListResponse with Eq::{not_equal, equal}
@@ -545,9 +558,10 @@ pub fn AuthUserListResponse::decode(
 
 ///|
 /// Delete a user (`etcdserverpb.AuthUserDeleteRequest`).
+#derive(Eq)
 pub(all) struct AuthUserDeleteRequest {
   name : String
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserDeleteRequest with Eq::{not_equal, equal}
@@ -588,9 +602,10 @@ pub fn AuthUserDeleteResponse::empty() -> AuthUserDeleteResponse {
 
 ///|
 /// Deleted-user reply (`etcdserverpb.AuthUserDeleteResponse`).
+#derive(Eq)
 pub(all) struct AuthUserDeleteResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserDeleteResponse with Eq::{not_equal, equal}
@@ -621,10 +636,11 @@ pub fn AuthUserDeleteResponse::decode(
 
 ///|
 /// Change a user's password (`etcdserverpb.AuthUserChangePasswordRequest`).
+#derive(Eq)
 pub(all) struct AuthUserChangePasswordRequest {
   name : String
   password : String
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserChangePasswordRequest with Eq::{not_equal, equal}
@@ -671,9 +687,10 @@ pub fn AuthUserChangePasswordResponse::empty() -> AuthUserChangePasswordResponse
 
 ///|
 /// Changed-password reply (`etcdserverpb.AuthUserChangePasswordResponse`).
+#derive(Eq)
 pub(all) struct AuthUserChangePasswordResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserChangePasswordResponse with Eq::{not_equal, equal}
@@ -706,10 +723,11 @@ pub fn AuthUserChangePasswordResponse::decode(
 
 ///|
 /// Grant a role to a user (`etcdserverpb.AuthUserGrantRoleRequest`).
+#derive(Eq)
 pub(all) struct AuthUserGrantRoleRequest {
   user : String
   role : String
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserGrantRoleRequest with Eq::{not_equal, equal}
@@ -756,9 +774,10 @@ pub fn AuthUserGrantRoleResponse::empty() -> AuthUserGrantRoleResponse {
 
 ///|
 /// Granted-role reply (`etcdserverpb.AuthUserGrantRoleResponse`).
+#derive(Eq)
 pub(all) struct AuthUserGrantRoleResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserGrantRoleResponse with Eq::{not_equal, equal}
@@ -791,10 +810,11 @@ pub fn AuthUserGrantRoleResponse::decode(
 
 ///|
 /// Revoke a role from a user (`etcdserverpb.AuthUserRevokeRoleRequest`).
+#derive(Eq)
 pub(all) struct AuthUserRevokeRoleRequest {
   name : String
   role : String
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserRevokeRoleRequest with Eq::{not_equal, equal}
@@ -841,9 +861,10 @@ pub fn AuthUserRevokeRoleResponse::empty() -> AuthUserRevokeRoleResponse {
 
 ///|
 /// Revoked-role reply (`etcdserverpb.AuthUserRevokeRoleResponse`).
+#derive(Eq)
 pub(all) struct AuthUserRevokeRoleResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend AuthUserRevokeRoleResponse with Eq::{not_equal, equal}
@@ -876,9 +897,10 @@ pub fn AuthUserRevokeRoleResponse::decode(
 
 ///|
 /// Add a role (`etcdserverpb.AuthRoleAddRequest`).
+#derive(Eq)
 pub(all) struct AuthRoleAddRequest {
   name : String
-} derive(Eq)
+}
 
 ///|
 pub extend AuthRoleAddRequest with Eq::{not_equal, equal}
@@ -919,9 +941,10 @@ pub fn AuthRoleAddResponse::empty() -> AuthRoleAddResponse {
 
 ///|
 /// Added-role reply (`etcdserverpb.AuthRoleAddResponse`).
+#derive(Eq)
 pub(all) struct AuthRoleAddResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend AuthRoleAddResponse with Eq::{not_equal, equal}
@@ -952,9 +975,10 @@ pub fn AuthRoleAddResponse::decode(
 
 ///|
 /// Fetch a role's permissions (`etcdserverpb.AuthRoleGetRequest`).
+#derive(Eq)
 pub(all) struct AuthRoleGetRequest {
   role : String
-} derive(Eq)
+}
 
 ///|
 pub extend AuthRoleGetRequest with Eq::{not_equal, equal}
@@ -995,10 +1019,11 @@ pub fn AuthRoleGetResponse::empty() -> AuthRoleGetResponse {
 
 ///|
 /// A role's permissions (`etcdserverpb.AuthRoleGetResponse`).
+#derive(Eq)
 pub(all) struct AuthRoleGetResponse {
   header : ResponseHeader
   perm : Array[Permission]
-} derive(Eq)
+}
 
 ///|
 pub extend AuthRoleGetResponse with Eq::{not_equal, equal}
@@ -1039,10 +1064,11 @@ pub fn AuthRoleListResponse::empty() -> AuthRoleListResponse {
 
 ///|
 /// All role names (`etcdserverpb.AuthRoleListResponse`).
+#derive(Eq)
 pub(all) struct AuthRoleListResponse {
   header : ResponseHeader
   roles : Array[String]
-} derive(Eq)
+}
 
 ///|
 pub extend AuthRoleListResponse with Eq::{not_equal, equal}
@@ -1078,9 +1104,10 @@ pub fn AuthRoleListResponse::decode(
 
 ///|
 /// Delete a role (`etcdserverpb.AuthRoleDeleteRequest`).
+#derive(Eq)
 pub(all) struct AuthRoleDeleteRequest {
   role : String
-} derive(Eq)
+}
 
 ///|
 pub extend AuthRoleDeleteRequest with Eq::{not_equal, equal}
@@ -1121,9 +1148,10 @@ pub fn AuthRoleDeleteResponse::empty() -> AuthRoleDeleteResponse {
 
 ///|
 /// Deleted-role reply (`etcdserverpb.AuthRoleDeleteResponse`).
+#derive(Eq)
 pub(all) struct AuthRoleDeleteResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend AuthRoleDeleteResponse with Eq::{not_equal, equal}
@@ -1154,10 +1182,11 @@ pub fn AuthRoleDeleteResponse::decode(
 
 ///|
 /// Grant a permission to a role (`etcdserverpb.AuthRoleGrantPermissionRequest`).
+#derive(Eq)
 pub(all) struct AuthRoleGrantPermissionRequest {
   name : String
   perm : Permission
-} derive(Eq)
+}
 
 ///|
 pub extend AuthRoleGrantPermissionRequest with Eq::{not_equal, equal}
@@ -1205,9 +1234,10 @@ pub fn AuthRoleGrantPermissionResponse::empty() -> AuthRoleGrantPermissionRespon
 
 ///|
 /// Granted-permission reply (`etcdserverpb.AuthRoleGrantPermissionResponse`).
+#derive(Eq)
 pub(all) struct AuthRoleGrantPermissionResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend AuthRoleGrantPermissionResponse with Eq::{not_equal, equal}
@@ -1240,11 +1270,12 @@ pub fn AuthRoleGrantPermissionResponse::decode(
 
 ///|
 /// Revoke a permission from a role (`etcdserverpb.AuthRoleRevokePermissionRequest`).
+#derive(Eq)
 pub(all) struct AuthRoleRevokePermissionRequest {
   role : String
   key : Bytes
   range_end : Bytes
-} derive(Eq)
+}
 
 ///|
 pub extend AuthRoleRevokePermissionRequest with Eq::{not_equal, equal}
@@ -1295,9 +1326,10 @@ pub fn AuthRoleRevokePermissionResponse::empty() -> AuthRoleRevokePermissionResp
 
 ///|
 /// Revoked-permission reply (`etcdserverpb.AuthRoleRevokePermissionResponse`).
+#derive(Eq)
 pub(all) struct AuthRoleRevokePermissionResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend AuthRoleRevokePermissionResponse with Eq::{not_equal, equal}

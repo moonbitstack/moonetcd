@@ -4,10 +4,11 @@
 ///|
 /// Ask etcd for a lease living `ttl` seconds, with a caller-chosen `id`
 /// (`etcdserverpb.LeaseGrantRequest`). `id` 0 lets the server assign one.
+#derive(Eq)
 pub(all) struct LeaseGrantRequest {
   ttl : Int64
   id : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend LeaseGrantRequest with Eq::{not_equal, equal}
@@ -53,12 +54,13 @@ pub fn LeaseGrantResponse::empty() -> LeaseGrantResponse {
 ///|
 /// The granted lease (`etcdserverpb.LeaseGrantResponse`). `error` is non-empty when
 /// the grant failed.
+#derive(Eq)
 pub(all) struct LeaseGrantResponse {
   header : ResponseHeader
   id : Int64
   ttl : Int64
   error : String
-} derive(Eq)
+}
 
 ///|
 pub extend LeaseGrantResponse with Eq::{not_equal, equal}
@@ -102,9 +104,10 @@ pub fn LeaseGrantResponse::decode(
 
 ///|
 /// Revoke lease `id` (`etcdserverpb.LeaseRevokeRequest`).
+#derive(Eq)
 pub(all) struct LeaseRevokeRequest {
   id : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend LeaseRevokeRequest with Eq::{not_equal, equal}
@@ -145,9 +148,10 @@ pub fn LeaseRevokeResponse::empty() -> LeaseRevokeResponse {
 
 ///|
 /// The result of a revoke (`etcdserverpb.LeaseRevokeResponse`).
+#derive(Eq)
 pub(all) struct LeaseRevokeResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend LeaseRevokeResponse with Eq::{not_equal, equal}
@@ -178,9 +182,10 @@ pub fn LeaseRevokeResponse::decode(
 
 ///|
 /// Renew lease `id` (`etcdserverpb.LeaseKeepAliveRequest`).
+#derive(Eq)
 pub(all) struct LeaseKeepAliveRequest {
   id : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend LeaseKeepAliveRequest with Eq::{not_equal, equal}
@@ -222,11 +227,12 @@ pub fn LeaseKeepAliveResponse::empty() -> LeaseKeepAliveResponse {
 ///|
 /// The renewed lease and its remaining `ttl` (`etcdserverpb.LeaseKeepAliveResponse`).
 /// A `ttl` of 0 means the lease has expired.
+#derive(Eq)
 pub(all) struct LeaseKeepAliveResponse {
   header : ResponseHeader
   id : Int64
   ttl : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend LeaseKeepAliveResponse with Eq::{not_equal, equal}
@@ -267,10 +273,11 @@ pub fn LeaseKeepAliveResponse::decode(
 ///|
 /// Inspect lease `id`, optionally listing the keys attached to it
 /// (`etcdserverpb.LeaseTimeToLiveRequest`).
+#derive(Eq)
 pub(all) struct LeaseTimeToLiveRequest {
   id : Int64
   keys : Bool
-} derive(Eq)
+}
 
 ///|
 pub extend LeaseTimeToLiveRequest with Eq::{not_equal, equal}
@@ -315,13 +322,14 @@ pub fn LeaseTimeToLiveResponse::empty() -> LeaseTimeToLiveResponse {
 
 ///|
 /// A lease's remaining time (`etcdserverpb.LeaseTimeToLiveResponse`).
+#derive(Eq)
 pub(all) struct LeaseTimeToLiveResponse {
   header : ResponseHeader
   id : Int64
   ttl : Int64
   granted_ttl : Int64
   keys : Array[Bytes]
-} derive(Eq)
+}
 
 ///|
 pub extend LeaseTimeToLiveResponse with Eq::{not_equal, equal}
@@ -369,9 +377,10 @@ pub fn LeaseTimeToLiveResponse::decode(
 
 ///|
 /// One lease's id (`etcdserverpb.LeaseStatus`).
+#derive(Eq)
 pub(all) struct LeaseStatus {
   id : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend LeaseStatus with Eq::{not_equal, equal}
@@ -410,10 +419,11 @@ pub fn LeaseLeasesResponse::empty() -> LeaseLeasesResponse {
 
 ///|
 /// The list of leases (`etcdserverpb.LeaseLeasesResponse`).
+#derive(Eq)
 pub(all) struct LeaseLeasesResponse {
   header : ResponseHeader
   leases : Array[LeaseStatus]
-} derive(Eq)
+}
 
 ///|
 pub extend LeaseLeasesResponse with Eq::{not_equal, equal}

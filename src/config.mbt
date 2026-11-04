@@ -6,13 +6,14 @@
 ///|
 /// TLS settings for a connection. `enabled` is honoured by the client only once the
 /// transport carries TLS; the record is present so callers can configure it now.
+#derive(Eq)
 pub(all) struct TlsConfig {
   enabled : Bool
   ca_cert : Bytes
   cert : Bytes
   key : Bytes
   server_name : String
-} derive(Eq)
+}
 
 ///|
 pub extend TlsConfig with Eq::{not_equal, equal}
@@ -30,6 +31,7 @@ pub let default_tls : TlsConfig = {
 /// How a client reaches etcd: the endpoints to dial, the credentials to
 /// authenticate with, timeouts, and TLS. Only `endpoints` is required; everything
 /// else has a safe default.
+#derive(Eq)
 pub(all) struct ClientConfig {
   endpoints : Array[String]
   username : String
@@ -38,7 +40,7 @@ pub(all) struct ClientConfig {
   dial_timeout_millis : Int32
   keep_alive_millis : Int32
   tls : TlsConfig
-} derive(Eq)
+}
 
 ///|
 pub extend ClientConfig with Eq::{not_equal, equal}

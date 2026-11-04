@@ -4,11 +4,12 @@
 
 ///|
 /// What an `AlarmRequest` does (`etcdserverpb.AlarmRequest.AlarmAction`).
+#derive(Eq)
 pub(all) enum AlarmAction {
   Get = 0
   Activate = 1
   Deactivate = 2
-} derive(Eq)
+}
 
 ///|
 pub extend AlarmAction with Eq::{not_equal, equal}
@@ -35,11 +36,12 @@ pub fn AlarmAction::from_int(n : Int32) -> AlarmAction {
 
 ///|
 /// The kind of alarm (`etcdserverpb.Alarm.Type`).
+#derive(Eq)
 pub(all) enum AlarmType {
   None = 0
   Nospace = 1
   Corrupt = 2
-} derive(Eq)
+}
 
 ///|
 pub extend AlarmType with Eq::{not_equal, equal}
@@ -66,10 +68,11 @@ pub fn AlarmType::from_int(n : Int32) -> AlarmType {
 
 ///|
 /// One raised alarm (`etcdserverpb.Alarm`).
+#derive(Eq)
 pub(all) struct Alarm {
   member_id : UInt64
   alarm : AlarmType
-} derive(Eq)
+}
 
 ///|
 pub extend Alarm with Eq::{not_equal, equal}
@@ -107,11 +110,12 @@ pub fn Alarm::decode(data : Bytes) -> Alarm raise @proto.PbError {
 
 ///|
 /// Query or raise an alarm (`etcdserverpb.AlarmRequest`).
+#derive(Eq)
 pub(all) struct AlarmRequest {
   action : AlarmAction
   member_id : UInt64
   alarm : AlarmType
-} derive(Eq)
+}
 
 ///|
 pub extend AlarmRequest with Eq::{not_equal, equal}
@@ -161,10 +165,11 @@ pub fn AlarmResponse::empty() -> AlarmResponse {
 ///|
 /// The alarm state (`etcdserverpb.AlarmResponse`): a repeated list of alarms, each a
 /// `memberID` and an `AlarmType`.
+#derive(Eq)
 pub(all) struct AlarmResponse {
   header : ResponseHeader
   alarms : Array[Alarm]
-} derive(Eq)
+}
 
 ///|
 pub extend AlarmResponse with Eq::{not_equal, equal}
@@ -200,7 +205,8 @@ pub fn AlarmResponse::decode(
 
 ///|
 /// Snapshot of cluster state (`etcdserverpb.SnapshotRequest`).
-pub(all) struct SnapshotRequest {} derive(Eq)
+#derive(Eq)
+pub(all) struct SnapshotRequest {}
 
 ///|
 pub extend SnapshotRequest with Eq::{not_equal, equal}
@@ -225,11 +231,12 @@ pub fn SnapshotResponse::empty() -> SnapshotResponse {
 
 ///|
 /// One chunk of a snapshot stream (`etcdserverpb.SnapshotResponse`).
+#derive(Eq)
 pub(all) struct SnapshotResponse {
   header : ResponseHeader
   blob : Bytes
   remaining_bytes : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend SnapshotResponse with Eq::{not_equal, equal}
@@ -269,10 +276,11 @@ pub fn SnapshotResponse::decode(
 
 ///|
 /// A hash of the backend (`etcdserverpb.HashResponse`); `HashKV` pins a revision.
+#derive(Eq)
 pub(all) struct HashResponse {
   header : ResponseHeader
   hash : UInt32
-} derive(Eq)
+}
 
 ///|
 pub extend HashResponse with Eq::{not_equal, equal}
@@ -321,12 +329,13 @@ pub fn HashKVResponse::empty() -> HashKVResponse {
 
 ///|
 /// A hash of the backend at a pinned revision (`etcdserverpb.HashKVResponse`).
+#derive(Eq)
 pub(all) struct HashKVResponse {
   header : ResponseHeader
   hash : UInt32
   compact_revision : Int64
   hash_revision : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend HashKVResponse with Eq::{not_equal, equal}
@@ -375,9 +384,10 @@ pub fn DefragmentResponse::empty() -> DefragmentResponse {
 
 ///|
 /// The reply to a `Defragment` (`etcdserverpb.DefragmentResponse`).
+#derive(Eq)
 pub(all) struct DefragmentResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend DefragmentResponse with Eq::{not_equal, equal}
@@ -408,6 +418,7 @@ pub fn DefragmentResponse::decode(
 
 ///|
 /// Cluster status (`etcdserverpb.StatusResponse`).
+#derive(Eq)
 pub(all) struct StatusResponse {
   header : ResponseHeader
   version : String
@@ -418,7 +429,7 @@ pub(all) struct StatusResponse {
   raft_applied_index : UInt64
   errors : Array[Alarm]
   db_size_in_use : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend StatusResponse with Eq::{not_equal, equal}
@@ -497,9 +508,10 @@ pub fn StatusResponse::decode(
 
 ///|
 /// Move leadership to `target_id` (`etcdserverpb.MoveLeaderRequest`).
+#derive(Eq)
 pub(all) struct MoveLeaderRequest {
   target_id : UInt64
-} derive(Eq)
+}
 
 ///|
 pub extend MoveLeaderRequest with Eq::{not_equal, equal}
@@ -540,9 +552,10 @@ pub fn MoveLeaderResponse::empty() -> MoveLeaderResponse {
 
 ///|
 /// Move-leadership reply (`etcdserverpb.MoveLeaderResponse`).
+#derive(Eq)
 pub(all) struct MoveLeaderResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend MoveLeaderResponse with Eq::{not_equal, equal}
@@ -573,11 +586,12 @@ pub fn MoveLeaderResponse::decode(
 
 ///|
 /// The downgrade step to take (`etcdserverpb.DowngradeRequest.DowngradeAction`).
+#derive(Eq)
 pub(all) enum DowngradeAction {
   Validate = 0
   Download = 1
   Cancel = 2
-} derive(Eq)
+}
 
 ///|
 pub extend DowngradeAction with Eq::{not_equal, equal}
@@ -604,10 +618,11 @@ pub fn DowngradeAction::from_int(n : Int32) -> DowngradeAction {
 
 ///|
 /// Start or cancel a cluster version downgrade (`etcdserverpb.DowngradeRequest`).
+#derive(Eq)
 pub(all) struct DowngradeRequest {
   action : DowngradeAction
   version : String
-} derive(Eq)
+}
 
 ///|
 pub extend DowngradeRequest with Eq::{not_equal, equal}
@@ -653,10 +668,11 @@ pub fn DowngradeResponse::empty() -> DowngradeResponse {
 
 ///|
 /// Downgrade state (`etcdserverpb.DowngradeResponse`).
+#derive(Eq)
 pub(all) struct DowngradeResponse {
   header : ResponseHeader
   version : String
-} derive(Eq)
+}
 
 ///|
 pub extend DowngradeResponse with Eq::{not_equal, equal}

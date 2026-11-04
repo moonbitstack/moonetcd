@@ -5,10 +5,11 @@
 ///|
 /// A gRPC status: the numeric code (one of the 17 gRPC codes) and the server's
 /// message. Surfaces when a call ends other than OK.
+#derive(Eq)
 pub(all) struct Status {
   code : Int32
   message : String
-} derive(Eq)
+}
 
 ///|
 pub extend Status with Eq::{not_equal, equal}

@@ -5,11 +5,12 @@
 
 ///|
 /// Order of a ranged read (`etcdserverpb.RangeRequest.SortOrder`).
+#derive(Eq)
 pub(all) enum SortOrder {
   None = 0
   Ascend = 1
   Descend = 2
-} derive(Eq)
+}
 
 ///|
 pub extend SortOrder with Eq::{not_equal, equal}
@@ -36,13 +37,14 @@ pub fn SortOrder::from_int(n : Int32) -> SortOrder {
 
 ///|
 /// What a ranged read orders by (`etcdserverpb.RangeRequest.SortTarget`).
+#derive(Eq)
 pub(all) enum SortTarget {
   Key = 0
   Version = 1
   Create = 2
   Mod = 3
   Value = 4
-} derive(Eq)
+}
 
 ///|
 pub extend SortTarget with Eq::{not_equal, equal}
@@ -75,12 +77,13 @@ pub fn SortTarget::from_int(n : Int32) -> SortTarget {
 
 ///|
 /// Per-call metadata etcd returns with every response (`etcdserverpb.ResponseHeader`).
+#derive(Eq)
 pub(all) struct ResponseHeader {
   cluster_id : UInt64
   member_id : UInt64
   revision : Int64
   raft_term : UInt64
-} derive(Eq)
+}
 
 ///|
 pub extend ResponseHeader with Eq::{not_equal, equal}
@@ -132,6 +135,7 @@ pub fn ResponseHeader::decode(
 ///|
 /// A read over `[key, range_end)` (empty `range_end` is a single key), optionally
 /// bounded, ordered, and pinned to a revision (`etcdserverpb.RangeRequest`).
+#derive(Eq)
 pub(all) struct RangeRequest {
   key : Bytes
   range_end : Bytes
@@ -146,7 +150,7 @@ pub(all) struct RangeRequest {
   max_mod_revision : Int64
   min_create_revision : Int64
   max_create_revision : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend RangeRequest with Eq::{not_equal, equal}
@@ -245,12 +249,13 @@ pub fn RangeRequest::decode(data : Bytes) -> RangeRequest raise @proto.PbError {
 ///|
 /// The result of a `Range` (`etcdserverpb.RangeResponse`): the matched key/values,
 /// whether more remain beyond `limit`, and the total count in the range.
+#derive(Eq)
 pub(all) struct RangeResponse {
   header : ResponseHeader
   kvs : Array[KeyValue]
   more : Bool
   count : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend RangeResponse with Eq::{not_equal, equal}
@@ -301,6 +306,7 @@ pub fn RangeResponse::decode(
 
 ///|
 /// A write of `value` at `key`, optionally under `lease` (`etcdserverpb.PutRequest`).
+#derive(Eq)
 pub(all) struct PutRequest {
   key : Bytes
   value : Bytes
@@ -308,7 +314,7 @@ pub(all) struct PutRequest {
   prev_kv : Bool
   ignore_value : Bool
   ignore_lease : Bool
-} derive(Eq)
+}
 
 ///|
 pub extend PutRequest with Eq::{not_equal, equal}
@@ -375,10 +381,11 @@ pub fn PutResponse::empty() -> PutResponse {
 ///|
 /// The previous key/value a `Put` replaced, when `prev_kv` was set
 /// (`etcdserverpb.PutResponse`).
+#derive(Eq)
 pub(all) struct PutResponse {
   header : ResponseHeader
   prev_kv : KeyValue
-} derive(Eq)
+}
 
 ///|
 pub extend PutResponse with Eq::{not_equal, equal}
@@ -412,11 +419,12 @@ pub fn PutResponse::decode(data : Bytes) -> PutResponse raise @proto.PbError {
 
 ///|
 /// A delete over `[key, range_end)` (`etcdserverpb.DeleteRangeRequest`).
+#derive(Eq)
 pub(all) struct DeleteRangeRequest {
   key : Bytes
   range_end : Bytes
   prev_kv : Bool
-} derive(Eq)
+}
 
 ///|
 pub extend DeleteRangeRequest with Eq::{not_equal, equal}
@@ -466,11 +474,12 @@ pub fn DeleteRangeResponse::empty() -> DeleteRangeResponse {
 ///|
 /// The count removed and, when `prev_kv` was set, the key/values that were
 /// (`etcdserverpb.DeleteRangeResponse`).
+#derive(Eq)
 pub(all) struct DeleteRangeResponse {
   header : ResponseHeader
   deleted : Int64
   prev_kvs : Array[KeyValue]
-} derive(Eq)
+}
 
 ///|
 pub extend DeleteRangeResponse with Eq::{not_equal, equal}
@@ -511,12 +520,13 @@ pub fn DeleteRangeResponse::decode(
 
 ///|
 /// The comparison kind in a `Txn` (`etcdserverpb.Compare.CompareResult`).
+#derive(Eq)
 pub(all) enum CompareResult {
   Equal = 0
   Greater = 1
   Less = 2
   NotEqual = 3
-} derive(Eq)
+}
 
 ///|
 pub extend CompareResult with Eq::{not_equal, equal}
@@ -546,13 +556,14 @@ pub fn CompareResult::from_int(n : Int32) -> CompareResult {
 
 ///|
 /// What a `Txn` compares (`etcdserverpb.Compare.CompareTarget`).
+#derive(Eq)
 pub(all) enum CompareTarget {
   Version = 0
   Create = 1
   Mod = 2
   Value = 3
   Lease = 4
-} derive(Eq)
+}
 
 ///|
 pub extend CompareTarget with Eq::{not_equal, equal}
@@ -585,13 +596,14 @@ pub fn CompareTarget::from_int(n : Int32) -> CompareTarget {
 
 ///|
 /// The value a `Compare` tests, the oneof `target_union` of `etcdserverpb.Compare`.
+#derive(Eq)
 pub(all) enum CmpTarget {
   Version(Int64)
   CreateRevision(Int64)
   ModRevision(Int64)
   Value(Bytes)
   Lease(Int64)
-} derive(Eq)
+}
 
 ///|
 pub extend CmpTarget with Eq::{not_equal, equal}
@@ -599,13 +611,14 @@ pub extend CmpTarget with Eq::{not_equal, equal}
 ///|
 /// One guarded test in a `Txn` (`etcdserverpb.Compare`): compare `target` of `key`
 /// (or `[key, range_end)`) against `target_union` with `result`.
+#derive(Eq)
 pub(all) struct Compare {
   result : CompareResult
   target : CompareTarget
   key : Bytes
   range_end : Bytes
   target_union : CmpTarget
-} derive(Eq)
+}
 
 ///|
 pub extend Compare with Eq::{not_equal, equal}
@@ -668,12 +681,13 @@ pub fn Compare::decode(data : Bytes) -> Compare raise @proto.PbError {
 
 ///|
 /// A step of a `Txn`, the oneof `request_union` of `etcdserverpb.TxnRequest`.
+#derive(Eq)
 pub(all) enum RequestOp {
   RequestRange(RangeRequest)
   RequestPut(PutRequest)
   RequestDeleteRange(DeleteRangeRequest)
   RequestTxn(TxnRequest)
-} derive(Eq)
+}
 
 ///|
 pub extend RequestOp with Eq::{not_equal, equal}
@@ -713,12 +727,13 @@ pub fn RequestOp::decode(data : Bytes) -> RequestOp raise @proto.PbError {
 ///|
 /// The outcome of a `Txn` step, the oneof `response_union` of
 /// `etcdserverpb.TxnResponse`.
+#derive(Eq)
 pub(all) enum ResponseOp {
   ResponseRange(RangeResponse)
   ResponsePut(PutResponse)
   ResponseDeleteRange(DeleteRangeResponse)
   ResponseTxn(TxnResponse)
-} derive(Eq)
+}
 
 ///|
 pub extend ResponseOp with Eq::{not_equal, equal}
@@ -760,11 +775,12 @@ pub fn ResponseOp::decode(data : Bytes) -> ResponseOp raise @proto.PbError {
 ///|
 /// A conditional batch (`etcdserverpb.TxnRequest`): when every `compare` holds, the
 /// `success` ops run; otherwise the `failure` ops run.
+#derive(Eq)
 pub(all) struct TxnRequest {
   compare : Array[Compare]
   success : Array[RequestOp]
   failure : Array[RequestOp]
-} derive(Eq)
+}
 
 ///|
 pub extend TxnRequest with Eq::{not_equal, equal}
@@ -813,11 +829,12 @@ pub fn TxnResponse::empty() -> TxnResponse {
 
 ///|
 /// The result of a `Txn` (`etcdserverpb.TxnResponse`).
+#derive(Eq)
 pub(all) struct TxnResponse {
   header : ResponseHeader
   succeeded : Bool
   responses : Array[ResponseOp]
-} derive(Eq)
+}
 
 ///|
 pub extend TxnResponse with Eq::{not_equal, equal}
@@ -856,10 +873,11 @@ pub fn TxnResponse::decode(data : Bytes) -> TxnResponse raise @proto.PbError {
 
 ///|
 /// A request to discard history before `revision` (`etcdserverpb.CompactionRequest`).
+#derive(Eq)
 pub(all) struct CompactionRequest {
   revision : Int64
   physical : Bool
-} derive(Eq)
+}
 
 ///|
 pub extend CompactionRequest with Eq::{not_equal, equal}
@@ -904,9 +922,10 @@ pub fn CompactionResponse::empty() -> CompactionResponse {
 
 ///|
 /// The result of a compaction (`etcdserverpb.CompactionResponse`).
+#derive(Eq)
 pub(all) struct CompactionResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend CompactionResponse with Eq::{not_equal, equal}

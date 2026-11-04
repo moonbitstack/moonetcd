@@ -3,12 +3,13 @@
 
 ///|
 /// One member of the cluster (`etcdserverpb.Member`).
+#derive(Eq)
 pub(all) struct Member {
   id : UInt64
   name : String
   peer_urls : Array[String]
   client_urls : Array[String]
-} derive(Eq)
+}
 
 ///|
 pub extend Member with Eq::{not_equal, equal}
@@ -54,10 +55,11 @@ pub fn Member::decode(data : Bytes) -> Member raise @proto.PbError {
 
 ///|
 /// Add a member with the given peer URLs (`etcdserverpb.MemberAddRequest`).
+#derive(Eq)
 pub(all) struct MemberAddRequest {
   peer_urls : Array[String]
   is_learner : Bool
-} derive(Eq)
+}
 
 ///|
 pub extend MemberAddRequest with Eq::{not_equal, equal}
@@ -102,11 +104,12 @@ pub fn MemberAddResponse::empty() -> MemberAddResponse {
 
 ///|
 /// The added member and the resulting membership (`etcdserverpb.MemberAddResponse`).
+#derive(Eq)
 pub(all) struct MemberAddResponse {
   header : ResponseHeader
   member_ : Member
   members : Array[Member]
-} derive(Eq)
+}
 
 ///|
 pub extend MemberAddResponse with Eq::{not_equal, equal}
@@ -147,9 +150,10 @@ pub fn MemberAddResponse::decode(
 
 ///|
 /// Remove the member `id` (`etcdserverpb.MemberRemoveRequest`).
+#derive(Eq)
 pub(all) struct MemberRemoveRequest {
   id : UInt64
-} derive(Eq)
+}
 
 ///|
 pub extend MemberRemoveRequest with Eq::{not_equal, equal}
@@ -190,10 +194,11 @@ pub fn MemberRemoveResponse::empty() -> MemberRemoveResponse {
 
 ///|
 /// The membership after a removal (`etcdserverpb.MemberRemoveResponse`).
+#derive(Eq)
 pub(all) struct MemberRemoveResponse {
   header : ResponseHeader
   members : Array[Member]
-} derive(Eq)
+}
 
 ///|
 pub extend MemberRemoveResponse with Eq::{not_equal, equal}
@@ -229,10 +234,11 @@ pub fn MemberRemoveResponse::decode(
 
 ///|
 /// Change the peer URLs of member `id` (`etcdserverpb.MemberUpdateRequest`).
+#derive(Eq)
 pub(all) struct MemberUpdateRequest {
   id : UInt64
   peer_urls : Array[String]
-} derive(Eq)
+}
 
 ///|
 pub extend MemberUpdateRequest with Eq::{not_equal, equal}
@@ -277,10 +283,11 @@ pub fn MemberUpdateResponse::empty() -> MemberUpdateResponse {
 
 ///|
 /// The membership after an update (`etcdserverpb.MemberUpdateResponse`).
+#derive(Eq)
 pub(all) struct MemberUpdateResponse {
   header : ResponseHeader
   members : Array[Member]
-} derive(Eq)
+}
 
 ///|
 pub extend MemberUpdateResponse with Eq::{not_equal, equal}
@@ -316,9 +323,10 @@ pub fn MemberUpdateResponse::decode(
 
 ///|
 /// List the cluster members (`etcdserverpb.MemberListRequest`).
+#derive(Eq)
 pub(all) struct MemberListRequest {
   linearizable : Bool
-} derive(Eq)
+}
 
 ///|
 pub extend MemberListRequest with Eq::{not_equal, equal}
@@ -359,10 +367,11 @@ pub fn MemberListResponse::empty() -> MemberListResponse {
 
 ///|
 /// The membership (`etcdserverpb.MemberListResponse`).
+#derive(Eq)
 pub(all) struct MemberListResponse {
   header : ResponseHeader
   members : Array[Member]
-} derive(Eq)
+}
 
 ///|
 pub extend MemberListResponse with Eq::{not_equal, equal}
@@ -399,9 +408,10 @@ pub fn MemberListResponse::decode(
 ///|
 /// Promote a learner member `id` to a voting member
 /// (`etcdserverpb.MemberPromoteRequest`).
+#derive(Eq)
 pub(all) struct MemberPromoteRequest {
   id : UInt64
-} derive(Eq)
+}
 
 ///|
 pub extend MemberPromoteRequest with Eq::{not_equal, equal}
@@ -442,10 +452,11 @@ pub fn MemberPromoteResponse::empty() -> MemberPromoteResponse {
 
 ///|
 /// The membership after a promotion (`etcdserverpb.MemberPromoteResponse`).
+#derive(Eq)
 pub(all) struct MemberPromoteResponse {
   header : ResponseHeader
   members : Array[Member]
-} derive(Eq)
+}
 
 ///|
 pub extend MemberPromoteResponse with Eq::{not_equal, equal}

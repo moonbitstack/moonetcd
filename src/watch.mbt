@@ -3,10 +3,11 @@
 
 ///|
 /// What a watch filters out (`etcdserverpb.WatchCreateRequest.FilterType`).
+#derive(Eq)
 pub(all) enum FilterType {
   NoPut = 0
   NoDelete = 1
-} derive(Eq)
+}
 
 ///|
 pub extend FilterType with Eq::{not_equal, equal}
@@ -31,6 +32,7 @@ pub fn FilterType::from_int(n : Int32) -> FilterType {
 ///|
 /// Open a watch over `[key, range_end)` from `start_revision`
 /// (`etcdserverpb.WatchCreateRequest`).
+#derive(Eq)
 pub(all) struct WatchCreateRequest {
   key : Bytes
   range_end : Bytes
@@ -40,7 +42,7 @@ pub(all) struct WatchCreateRequest {
   prev_kv : Bool
   watch_id : Int64
   fragment : Bool
-} derive(Eq)
+}
 
 ///|
 pub extend WatchCreateRequest with Eq::{not_equal, equal}
@@ -113,9 +115,10 @@ pub fn WatchCreateRequest::decode(
 
 ///|
 /// Close the watch `watch_id` (`etcdserverpb.WatchCancelRequest`).
+#derive(Eq)
 pub(all) struct WatchCancelRequest {
   watch_id : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend WatchCancelRequest with Eq::{not_equal, equal}
@@ -152,7 +155,8 @@ pub fn WatchCancelRequest::decode(
 ///|
 /// Ask the server for a progress notification on an existing watch
 /// (`etcdserverpb.WatchProgressRequest`).
-pub(all) struct WatchProgressRequest {} derive(Eq)
+#derive(Eq)
+pub(all) struct WatchProgressRequest {}
 
 ///|
 pub extend WatchProgressRequest with Eq::{not_equal, equal}
@@ -172,11 +176,12 @@ pub fn WatchProgressRequest::decode(data : Bytes) -> WatchProgressRequest {
 
 ///|
 /// One frame of the bidi Watch stream (`etcdserverpb.WatchRequest.request_union`).
+#derive(Eq)
 pub(all) enum WatchRequest {
   CreateRequest(WatchCreateRequest)
   CancelRequest(WatchCancelRequest)
   ProgressRequest(WatchProgressRequest)
-} derive(Eq)
+}
 
 ///|
 pub extend WatchRequest with Eq::{not_equal, equal}
@@ -213,6 +218,7 @@ pub fn WatchRequest::decode(data : Bytes) -> WatchRequest raise @proto.PbError {
 ///|
 /// A frame the server sends on the Watch stream (`etcdserverpb.WatchResponse`): the
 /// watch lifecycle flags and the batch of change `events` since the last frame.
+#derive(Eq)
 pub(all) struct WatchResponse {
   header : ResponseHeader
   watch_id : Int64
@@ -222,7 +228,7 @@ pub(all) struct WatchResponse {
   compact_revision : Int64
   cancel_reason : String
   fragment : Bool
-} derive(Eq)
+}
 
 ///|
 pub extend WatchResponse with Eq::{not_equal, equal}

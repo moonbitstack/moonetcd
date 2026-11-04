@@ -3,10 +3,11 @@
 
 ///|
 /// Acquire the lock named `name`; `lease` keeps it alive (`v3lock.LockRequest`).
+#derive(Eq)
 pub(all) struct LockRequest {
   name : Bytes
   lease : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend LockRequest with Eq::{not_equal, equal}
@@ -49,10 +50,11 @@ pub fn LockResponse::empty() -> LockResponse {
 
 ///|
 /// The lock is held while `key` exists (`v3lock.LockResponse`).
+#derive(Eq)
 pub(all) struct LockResponse {
   header : ResponseHeader
   key : Bytes
-} derive(Eq)
+}
 
 ///|
 pub extend LockResponse with Eq::{not_equal, equal}
@@ -86,9 +88,10 @@ pub fn LockResponse::decode(data : Bytes) -> LockResponse raise @proto.PbError {
 
 ///|
 /// Release the lock identified by `key` (`v3lock.UnlockRequest`).
+#derive(Eq)
 pub(all) struct UnlockRequest {
   key : Bytes
-} derive(Eq)
+}
 
 ///|
 pub extend UnlockRequest with Eq::{not_equal, equal}
@@ -129,9 +132,10 @@ pub fn UnlockResponse::empty() -> UnlockResponse {
 
 ///|
 /// The header of a released lock (`v3lock.UnlockResponse`).
+#derive(Eq)
 pub(all) struct UnlockResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend UnlockResponse with Eq::{not_equal, equal}

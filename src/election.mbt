@@ -4,12 +4,13 @@
 
 ///|
 /// The opaque handle to a leadership claim (`v3election.LeaderKey`).
+#derive(Eq)
 pub(all) struct LeaderKey {
   name : Bytes
   key : Bytes
   rev : Int64
   lease : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend LeaderKey with Eq::{not_equal, equal}
@@ -56,11 +57,12 @@ pub fn LeaderKey::decode(data : Bytes) -> LeaderKey raise @proto.PbError {
 ///|
 /// Enter the election `name` with `value`, guarded by `lease`
 /// (`v3election.CampaignRequest`).
+#derive(Eq)
 pub(all) struct CampaignRequest {
   name : Bytes
   value : Bytes
   lease : Int64
-} derive(Eq)
+}
 
 ///|
 pub extend CampaignRequest with Eq::{not_equal, equal}
@@ -109,10 +111,11 @@ pub fn CampaignResponse::empty() -> CampaignResponse {
 
 ///|
 /// The won leadership (`v3election.CampaignResponse`).
+#derive(Eq)
 pub(all) struct CampaignResponse {
   header : ResponseHeader
   leader : LeaderKey
-} derive(Eq)
+}
 
 ///|
 pub extend CampaignResponse with Eq::{not_equal, equal}
@@ -149,9 +152,10 @@ pub fn CampaignResponse::decode(
 
 ///|
 /// Ask for the current leader of election `name` (`v3election.LeaderRequest`).
+#derive(Eq)
 pub(all) struct LeaderRequest {
   name : Bytes
-} derive(Eq)
+}
 
 ///|
 pub extend LeaderRequest with Eq::{not_equal, equal}
@@ -192,10 +196,11 @@ pub fn LeaderResponse::empty() -> LeaderResponse {
 
 ///|
 /// The current leader (`v3election.LeaderResponse`).
+#derive(Eq)
 pub(all) struct LeaderResponse {
   header : ResponseHeader
   kv : KeyValue
-} derive(Eq)
+}
 
 ///|
 pub extend LeaderResponse with Eq::{not_equal, equal}
@@ -232,10 +237,11 @@ pub fn LeaderResponse::decode(
 
 ///|
 /// Update the value of a held leadership (`v3election.ProclaimRequest`).
+#derive(Eq)
 pub(all) struct ProclaimRequest {
   leader : LeaderKey
   value : Bytes
-} derive(Eq)
+}
 
 ///|
 pub extend ProclaimRequest with Eq::{not_equal, equal}
@@ -281,9 +287,10 @@ pub fn ProclaimResponse::empty() -> ProclaimResponse {
 
 ///|
 /// The reply to a proclaim (`v3election.ProclaimResponse`): just the header.
+#derive(Eq)
 pub(all) struct ProclaimResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend ProclaimResponse with Eq::{not_equal, equal}
@@ -314,9 +321,10 @@ pub fn ProclaimResponse::decode(
 
 ///|
 /// Give up a held leadership (`v3election.ResignRequest`).
+#derive(Eq)
 pub(all) struct ResignRequest {
   leader : LeaderKey
-} derive(Eq)
+}
 
 ///|
 pub extend ResignRequest with Eq::{not_equal, equal}
@@ -357,9 +365,10 @@ pub fn ResignResponse::empty() -> ResignResponse {
 
 ///|
 /// Resign reply (`v3election.ResignResponse`).
+#derive(Eq)
 pub(all) struct ResignResponse {
   header : ResponseHeader
-} derive(Eq)
+}
 
 ///|
 pub extend ResignResponse with Eq::{not_equal, equal}
