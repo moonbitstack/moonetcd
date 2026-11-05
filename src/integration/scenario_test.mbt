@@ -349,7 +349,7 @@ async test "a role grants what it says, and a token is what lets a user in" {
     password: "secret",
   })
   defer {
-    ignore(admin.auth().disable())
+    @async.protect_from_cancel(() => ignore(admin.auth().disable()))
     admin.close()
   }
   let user = @client.Client::connect({

@@ -336,7 +336,7 @@ async test "gateway: a token in the authorization header is what lets a user in"
     password: "secret",
   })
   defer {
-    ignore(root.auth().disable())
+    @async.protect_from_cancel(() => ignore(root.auth().disable()))
     root.close()
   }
   let user = @client.Client::connect_gateway({

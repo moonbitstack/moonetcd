@@ -32,7 +32,9 @@ async test "a service named like a path stays its own service" {
     endpoint(1),
     5000,
   )
-  defer @moonsd.Registrar::deregister(registry, lease)
+  defer @async.protect_from_cancel(() => {
+    @moonsd.Registrar::deregister(registry, lease)
+  })
   assert_eq(@moonsd.Discovery::resolve(registry, "sd-path").length(), 0)
   assert_eq(@moonsd.Discovery::resolve(registry, "sd-path/v2").length(), 1)
 }
@@ -44,7 +46,9 @@ async test "two prefixes do not see each other" {
   let one = @sd.Registry::new(client, prefix="/sd-one")
   let two = @sd.Registry::new(client, prefix="/sd-two")
   let lease = @moonsd.Registrar::register(one, "sd-pre", endpoint(2), 5000)
-  defer @moonsd.Registrar::deregister(one, lease)
+  defer @async.protect_from_cancel(() => {
+    @moonsd.Registrar::deregister(one, lease)
+  })
   assert_eq(@moonsd.Discovery::resolve(one, "sd-pre").length(), 1)
   assert_eq(@moonsd.Discovery::resolve(two, "sd-pre").length(), 0)
 }
@@ -55,7 +59,9 @@ async test "a value that is not an endpoint is refused" {
   defer client.close()
   let registry = @sd.Registry::new(client)
   let granted = client.lease().grant(5)
-  defer ignore(client.lease().revoke(granted.id))
+  defer @async.protect_from_cancel(() => {
+    ignore(client.lease().revoke(granted.id))
+  })
   ignore(client.kv().put(b"/moonsd/sd-bad/x", b"not json", lease=granted.id))
   let refused = try @moonsd.Discovery::resolve(registry, "sd-bad") catch {
     @moonsd.Malformed(_) => true
@@ -76,9 +82,13 @@ async test "a watcher outlives a compaction" {
   defer watcher.close()
   let first = watcher.next()
   let a = @moonsd.Registrar::register(registry, service, endpoint(3), 5000)
-  defer @moonsd.Registrar::deregister(registry, a)
+  defer @async.protect_from_cancel(() => {
+    @moonsd.Registrar::deregister(registry, a)
+  })
   let b = @moonsd.Registrar::register(registry, service, endpoint(4), 5000)
-  defer @moonsd.Registrar::deregister(registry, b)
+  defer @async.protect_from_cancel(() => {
+    @moonsd.Registrar::deregister(registry, b)
+  })
   let top = client.kv().put(b"/moonsd-it/compact", b"x").header.revision
   ignore(client.kv().compact(top))
   // The watcher's position is now behind the compacted history.
