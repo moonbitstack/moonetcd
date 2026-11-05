@@ -118,19 +118,29 @@ def gateway_kind(kind):
 
 
 def gateway_rows():
-    """Message name to [(number, name, kind, presence)], in file order."""
+    """Message name to [(number, name, kind, presence)], in file order.
+
+    A long field is written over several lines by the formatter, so the table is
+    scanned as one text rather than line by line; a kind never contains a brace, so
+    the row ends at the first one after it.
+    """
     rows = {}
+    pattern = re.compile(
+        r'"(\w+)" =>|\{\s*number: (\d+),\s*name: "(\w+)",\s*kind: ([^{}]*?),\s*'
+        r"presence: (true|false),?\s*\}",
+        re.S,
+    )
     for path in sorted((ROOT / "src").glob("gateway_fields_*.mbt")):
         text = path.read_text(encoding="utf-8").replace("\r\n", "\n")
         message = None
-        for line in text.splitlines():
-            if m := re.match(r'\s*"(\w+)" =>', line):
+        for m in pattern.finditer(text):
+            if m.group(1):
                 message = m.group(1)
                 rows.setdefault(message, [])
-            elif message and (m := re.match(
-                r'\s*\{ number: (\d+), name: "(\w+)", kind: (.+), presence: (true|false) \},', line
-            )):
-                rows[message].append((int(m.group(1)), m.group(2), m.group(3).strip(), m.group(4)))
+            elif message:
+                rows[message].append(
+                    (int(m.group(2)), m.group(3), " ".join(m.group(4).split()), m.group(5))
+                )
     return rows
 
 
