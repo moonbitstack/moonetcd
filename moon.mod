@@ -13,6 +13,11 @@ keywords = [
   "etcdv3",
   "client",
   "grpc",
+  "grpc-gateway",
+  "gateway",
+  "http",
+  "json",
+  "rest",
   "kv",
   "key-value",
   "watch",
@@ -32,6 +37,8 @@ import {
   "moonbitstack/moonsd@0.1.1",
   "moonbitstack/moonrpc@0.21.12",
   "moonbitstack/moonhttp@0.15.7",
+  "moonbitstack/moonnet@0.1.10",
+  "moonbitstack/moonbase@0.4.3",
   "moonbitlang/async@0.22.5",
 }
 

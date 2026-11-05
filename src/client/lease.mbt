@@ -1,5 +1,5 @@
-// Lease: grant, revoke, TimeToLive, list, and KeepAlive (a bidi stream over a
-// dedicated multiplexed channel so it never disturbs the unary path).
+// Lease: grant, revoke, TimeToLive, list, and KeepAlive, over whichever transport the
+// client uses.
 
 ///|
 /// A typed handle for the Lease service. Obtain it with `client.lease()`.
@@ -14,10 +14,10 @@ pub async fn Lease::grant(
   ttl : Int64,
   id? : Int64,
 ) -> LeaseGrantResponse raise EtcdError {
-  let req = @moonetcd.LeaseGrantRequest::{ ttl, id: id.unwrap_or(0), }
+  let request = @moonetcd.LeaseGrantRequest::{ ttl, id: id.unwrap_or(0), }
   self.client.rpc(
     "/etcdserverpb.Lease/LeaseGrant",
-    req.encode(),
+    request.encode(),
     @moonetcd.LeaseGrantResponse::decode,
   )
 }
@@ -28,10 +28,10 @@ pub async fn Lease::revoke(
   self : Lease,
   id : Int64,
 ) -> LeaseRevokeResponse raise EtcdError {
-  let req = @moonetcd.LeaseRevokeRequest::{ id, }
+  let request = @moonetcd.LeaseRevokeRequest::{ id, }
   self.client.rpc(
     "/etcdserverpb.Lease/LeaseRevoke",
-    req.encode(),
+    request.encode(),
     @moonetcd.LeaseRevokeResponse::decode,
   )
 }
@@ -44,13 +44,13 @@ pub async fn Lease::time_to_live(
   id : Int64,
   keys? : Bool,
 ) -> LeaseTimeToLiveResponse raise EtcdError {
-  let req = @moonetcd.LeaseTimeToLiveRequest::{
+  let request = @moonetcd.LeaseTimeToLiveRequest::{
     id,
     keys: keys.unwrap_or(false),
   }
   self.client.rpc(
     "/etcdserverpb.Lease/LeaseTimeToLive",
-    req.encode(),
+    request.encode(),
     @moonetcd.LeaseTimeToLiveResponse::decode,
   )
 }
@@ -67,67 +67,42 @@ pub async fn Lease::leases(self : Lease) -> LeaseLeasesResponse raise EtcdError 
 }
 
 ///|
-/// A live KeepAlive stream. Open it with `keep_alive`, send `keep_alive(id)` for every
-/// lease to hold, and drain responses with `next`. Close it with `close`.
+/// A live KeepAlive session. Open it with `keep_alive`, ask it to hold leases with
+/// `keep_alive(id)`, drain acknowledgements with `next`, and close it with `close`.
 pub struct KeepAlive {
-  client : Client
-  mux : @net.MuxChannel
-  bidi : @net.BidiStream
+  stream : &KeepAliveStream
 }
 
 ///|
-/// Open the KeepAlive bidi stream. `g` is the task group that drives the channel's read
-/// pump, so this — like `Watch::watch_create` — must run inside `@async.with_task_group`.
+/// Open the keep-alive session. `g` is the task group that carries the stream's
+/// background work, so this — like `Watch::watch_create` — must run inside
+/// `@async.with_task_group`.
 pub async fn Lease::keep_alive(
   self : Lease,
   g : @async.TaskGroup[Unit],
 ) -> KeepAlive raise EtcdError {
-  let ep = self.client.endpoint_at(0)
-  let mux = @net.MuxChannel::connect(ep.0, ep.1) catch {
-    _ => raise transport_error("keepalive dial")
-  }
-  g.spawn_bg(no_wait=true, () => mux.read_pump())
-  @async.sleep(1)
-  let bidi = mux.open_bidi("/etcdserverpb.Lease/LeaseKeepAlive")
-  KeepAlive::{ client: self.client, mux, bidi, }
+  { stream: self.client.keep_alive_stream(g), }
 }
 
 ///|
-/// Ask the server to keep `lease_id` alive.
+/// Ask the server to keep `id` alive for another period.
 pub async fn KeepAlive::keep_alive(
   self : KeepAlive,
-  lease_id : Int64,
+  id : Int64,
 ) -> Unit raise EtcdError {
-  self.bidi.send(@moonetcd.LeaseKeepAliveRequest::{ id: lease_id, }.encode()) catch {
-    _ => raise transport_error("keepalive send")
-  }
+  self.stream.keep_alive(id)
 }
 
 ///|
-/// The next KeepAlive acknowledgement, or `None` when the stream has ended.
+/// The next acknowledgement, or `None` when the session has ended.
 pub async fn KeepAlive::next(
   self : KeepAlive,
 ) -> LeaseKeepAliveResponse? raise EtcdError {
-  let raw = self.bidi.recv() catch {
-    _ => raise transport_error("keepalive recv")
-  }
-  match raw {
-    Some(bytes) => {
-      let r = @moonetcd.LeaseKeepAliveResponse::decode(bytes) catch {
-        _ =>
-          raise @moonetcd.EtcdError::Refused(@moonetcd.Status::{
-            code: 13,
-            message: "decode KeepAliveResponse failed",
-          })
-      }
-      Some(r)
-    }
-    None => None
-  }
+  self.stream.next()
 }
 
 ///|
-/// End the KeepAlive stream and close its connection.
+/// End the session and release its connection.
 pub fn KeepAlive::close(self : KeepAlive) -> Unit {
-  self.mux.close()
+  self.stream.close()
 }
