@@ -12,6 +12,10 @@ pub let default_tls : TlsConfig
 
 pub fn exact(Bytes) -> (Bytes, Bytes)
 
+pub fn gateway_call(String) -> GatewayCall?
+
+pub fn gateway_failure(StringView) -> EtcdError
+
 pub fn has_prefix(Bytes, Bytes) -> Bool
 
 pub fn prefix(Bytes) -> Bytes
@@ -25,6 +29,7 @@ pub(all) suberror EtcdError {
   FutureRev(Int64)
 }
 pub fn EtcdError::message(Self) -> String
+pub fn EtcdError::of(Int32, String) -> Self
 pub fn EtcdError::output(Self, &Logger) -> Unit
 pub fn EtcdError::to_string(Self) -> String
 pub impl Show for EtcdError
@@ -597,6 +602,15 @@ pub fn FilterType::equal(Self, Self) -> Bool
 pub fn FilterType::from_int(Int32) -> Self
 pub fn FilterType::not_equal(Self, Self) -> Bool
 pub fn FilterType::to_int(Self) -> Int32
+
+pub(all) struct GatewayCall {
+  path : String
+  request : String
+  reply : String
+  streaming : Bool
+}
+pub fn GatewayCall::decode_reply(Self, StringView) -> Bytes raise EtcdError
+pub fn GatewayCall::encode_request(Self, Bytes) -> String raise EtcdError
 
 #derive(Eq)
 pub(all) struct HashKVResponse {

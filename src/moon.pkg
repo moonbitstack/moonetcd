@@ -3,5 +3,7 @@
 // values it carries); the gRPC transport lives in `moonetcd/client`, and the
 // client-side concurrency helpers in `moonetcd/concurrency`.
 import {
+  "moonbitlang/core/json",
   "moonbitstack/moonrpc/proto",
+  "moonbitstack/moonbase/base64",
 }

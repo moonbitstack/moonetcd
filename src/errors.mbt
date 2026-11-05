@@ -40,6 +40,53 @@ pub impl Show for EtcdError with fn output(self, logger) {
 pub extend EtcdError with Show::{to_string, output}
 
 ///|
+/// The error a failed call ended with, from the status its transport reported. Both
+/// revision conditions are sent as `OUT_OF_RANGE` over gRPC and as `UNKNOWN` by the
+/// lock and election services, so they are told apart by the message text — the way
+/// etcd's own client does — rather than by the code.
+pub fn EtcdError::of(code : Int32, message : String) -> EtcdError {
+  if message.contains("required revision has been compacted") {
+    return Compacted(extract_rev(message))
+  }
+  if message.contains("required revision is a future revision") {
+    return FutureRev(extract_rev(message))
+  }
+  Refused(Status::{ code, message, })
+}
+
+///|
+/// The trailing decimal integer of an etcd error message, such as the revision in
+/// `etcdserver: mvcc: required revision has been compacted: 12345`.
+fn extract_rev(message : String) -> Int64 {
+  let chars = message.to_array()
+  let n = chars.length()
+  let mut end = -1
+  let mut i = n - 1
+  while i >= 0 {
+    let digit = chars[i].to_int()
+    if digit >= 48 && digit <= 57 {
+      end = i + 1
+      break
+    }
+    i = i - 1
+  }
+  if end < 0 {
+    return 0L
+  }
+  let mut start = end - 1
+  while start >= 0 && chars[start].to_int() >= 48 && chars[start].to_int() <= 57 {
+    start = start - 1
+  }
+  let mut value : Int64 = 0L
+  let mut k = start + 1
+  while k < end {
+    value = value * 10L + Int64::from_int(chars[k].to_int() - 48)
+    k = k + 1
+  }
+  value
+}
+
+///|
 pub fn EtcdError::message(self : EtcdError) -> String {
   match self {
     Refused(s) => s.to_string()
