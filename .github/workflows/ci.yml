@@ -48,7 +48,8 @@ jobs:
           git diff --exit-code
 
   # Integration: a real etcd, first as a single node, then as a three-node cluster,
-  # with the client tests and every example driven against 127.0.0.1:2379.
+  # with the client tests and every example driven against 127.0.0.1:2379. Every case
+  # runs over gRPC and over the HTTP/JSON gateway, and the answers are compared.
   integration:
     runs-on: ubuntu-26.04
     steps:
@@ -95,7 +96,7 @@ jobs:
 
       - name: Examples (single node)
         run: |
-          for ex in 00-connect 01-kv 02-watch 03-lease 04-txn 05-lock; do
+          for ex in 00-connect 01-kv 02-watch 03-lease 04-txn 05-lock 06-gateway; do
             echo "== $ex =="
             moon run --target native "src/examples/$ex"
           done

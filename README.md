@@ -1,12 +1,13 @@
 # moonetcd
 
 An etcd v3 client for MoonBit — the feature surface of etcd's official Go client
-(`clientv3`), reimplemented over real gRPC.
+(`clientv3`), over either of the two transports etcd serves.
 
-`moonetcd` speaks the etcd v3 gRPC API (`etcdserverpb`, `mvccpb`, `v3lock`,
-`v3election`) over HTTP/2 via [`moonrpc`](https://github.com/moonbitstack/moonrpc).
-It gives you the whole client: key-value reads and writes, transactions, watches
-that survive a dropped connection, leases and keep-alives, cluster and auth
+`moonetcd` speaks the etcd v3 API (`etcdserverpb`, `mvccpb`, `v3lock`, `v3election`)
+over gRPC on HTTP/2 via [`moonrpc`](https://github.com/moonbitstack/moonrpc), or over
+etcd's HTTP/JSON gateway, which every etcd serves on the same port. It gives you the
+whole client either way: key-value reads and writes, transactions, watches that
+survive a dropped connection, leases and keep-alives, cluster and auth
 administration, maintenance, and the client-side `concurrency` helpers (sessions,
 mutexes, leader election).
 
@@ -14,14 +15,15 @@ mutexes, leader election).
 
 | Package | Contents |
 | --- | --- |
-| `moonbitstack/moonetcd` | Protobuf message types and codecs for the etcd v3 API, plus key helpers and the error model. Pure data — builds on every target. |
-| `moonbitstack/moonetcd/client` | The gRPC transport: `Client`, `KV`, `Watch`, `Lease`, `Cluster`, `Auth`, `Maintenance`, `Lock`, `Election`. Native only. |
+| `moonbitstack/moonetcd` | Protobuf message types and codecs for the etcd v3 API, the JSON mapping the gateway speaks, key helpers and the error model. Pure data — builds on every target. |
+| `moonbitstack/moonetcd/client` | Both transports — gRPC, and the HTTP/JSON gateway — under one set of handles: `Client`, `KV`, `Watch`, `Lease`, `Cluster`, `Auth`, `Maintenance`, `Lock`, `Election`. Native only. |
 | `moonbitstack/moonetcd/concurrency` | `Session`, `Mutex`, `Election` built on the client. Native only. |
 | `moonbitstack/moonetcd/sd` | The `moonsd` contract on etcd: `Registry`. Native only. |
 | `moonbitstack/moonetcd/examples/...` | Runnable examples (see below). |
 
 The root package carries no transport, so a program on any target can decode etcd
-messages; the transport and the concurrency helpers open sockets and are native only.
+messages and frame them for the gateway; the transports and the concurrency helpers
+open sockets and are native only.
 
 ## Install
 
@@ -51,6 +53,51 @@ async fn main {
 A `Client` dials one or more endpoints. Unary and server/client-streaming calls go
 through a load-balanced channel that fails over across the endpoints; a Watch or a
 Lease KeepAlive opens its own multiplexed connection so it can reconnect on its own.
+
+The same program over etcd's HTTP/JSON gateway differs in one line:
+
+```moonbit
+let client = @client.Client::connect_gateway(config)
+```
+
+## Two transports
+
+etcd answers on one client port in two dialects. gRPC is the native one; the
+HTTP/JSON gateway is a `POST` per call, with the same messages written as JSON:
+field names exactly as the `.proto` spells them, keys and values in standard base64,
+64-bit integers as decimal strings, and enumerations by name.
+
+```sh
+curl -s -X POST http://127.0.0.1:2379/v3/kv/range -d '{"key":"L2dyZWV0aW5n"}'
+```
+
+| | gRPC | HTTP/JSON gateway |
+| --- | --- | --- |
+| Built by | `Client::connect` | `Client::connect_gateway` |
+| Handles | the same | the same |
+| Bytes on the wire | protobuf | JSON |
+| One port | 2379 | 2379 |
+| Watch | one bidi stream per watch, resumed from the last revision | one streamed `POST` per watch, reissued from the last revision |
+| Keep-alive | one bidi stream, many ids | one `POST` per tick, answered once |
+| Failover | the channel balances; a stream moves to the next member | the next call dials the next member |
+
+Pick the gateway when something in the path already speaks HTTP and not gRPC — a
+proxy, a language without an HTTP/2 client, a shell script. Both transports raise
+the same `EtcdError` values at the same places; the messages a handle decodes are
+the same structs, so a program can switch by changing the constructor and nothing
+else.
+
+Two gateway differences worth knowing:
+
+- A watch is cancelled by closing its stream, which is how the gateway ends it.
+- A keep-alive is one request and one acknowledgement, so `KeepAlive::next()`
+  returns what the last `keep_alive(id)` was told rather than a stream of
+  autonomous renewals.
+
+A third transport can be plugged in: implement the `Transport` trait (one unary
+call, one server-streaming call, a watch and a keep-alive session, and `close`) and
+hand it to `Client::of_transport`. The handles are written against that trait and
+change nowhere else.
 
 ## API surface
 
@@ -221,6 +268,7 @@ moon run --target native src/examples/02-watch     # watch a key and read the ev
 moon run --target native src/examples/03-lease     # grant a lease, attach a key, revoke
 moon run --target native src/examples/04-txn       # compare-and-swap with a transaction
 moon run --target native src/examples/05-lock      # distributed mutex over a session
+moon run --target native src/examples/06-gateway   # the same calls over HTTP/JSON
 ```
 
 ## Building and testing
@@ -232,13 +280,17 @@ moon test  --target all
 moon info  --target all
 ```
 
-The protobuf codecs have network-free round-trip tests that run on every target, and
-`scripts/check_field_numbers.py` compares every field number with etcd's own `.proto` files,
-which a round trip cannot do. The transport has an in-process test that drives the real HTTP/2
-engine over a loopback socket against a stand-in gRPC server.
+The protobuf codecs and the gateway's JSON mapping have network-free round-trip tests that run on
+every target, and `scripts/check_field_numbers.py` compares every field number and every gateway
+field name with etcd's own `.proto` files, which a round trip cannot do. The gRPC transport has an
+in-process test that drives the real HTTP/2 engine over a loopback socket against a stand-in gRPC
+server.
 
 `src/integration` runs against a real etcd: leases lapsing, locks and elections changing hands,
-compaction, roles and tokens, a snapshot, and many tasks sharing one client. `scripts/etcd_cluster.sh`
+compaction, roles and tokens, a snapshot, and many tasks sharing one client. The same cases run
+over gRPC and over the gateway, and every answer has to come back the same; a watch that keeps
+delivering while the stream is open, a lease id past 2^53, and a token in the `Authorization`
+header are checked on the gateway alone. `scripts/etcd_cluster.sh`
 starts three members, and with `MOONETCD_MEMBERS` naming it the suite kills one under a watch and
 under plain calls. Without a server the tests return early; with `MOONETCD_LIVE` set, as in CI,
 a missing server fails them.
@@ -252,6 +304,8 @@ a missing server fails them.
   memory.
 - Watch and Lease KeepAlive use a pull model (`next()` returns one response at a
   time). Open them inside `@async.with_task_group` so the connection's read pump runs.
+- The gateway transport keeps its unary connections for reuse and dials again when
+  one has been closed under it; a stream owns its connection until it ends.
 
 ## License
 
