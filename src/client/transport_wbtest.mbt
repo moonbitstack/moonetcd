@@ -4,6 +4,18 @@
 // `CallReply` path in one go. A handler stands in for the etcd server.
 
 ///|
+/// The port a server is listening on, once `serve` has got that far.
+async fn bound_port(server : @net.GrpcServer) -> Int32 {
+  for _ in 0..<500 {
+    match server.listener {
+      Some(listener) => return listener.addr().port()
+      None => @async.sleep(10)
+    }
+  }
+  fail("the gRPC server never listened")
+}
+
+///|
 /// Serve one KV method on a loopback port and drive the client against it. The
 /// handlers decode the request with the same codecs the client encodes with, and echo
 /// back a response the client decodes — a full round trip through both codecs.
@@ -47,11 +59,11 @@ async test "transport: KV Put and Range round-trip through a loopback gRPC serve
         None => b""
       }
     })
-    let serve = g.spawn(() => server.serve(port=18211))
-    @async.sleep(300)
+    let serve = g.spawn(() => server.serve(port=0))
+    let port = bound_port(server)
     let cfg = @moonetcd.ClientConfig::{
       ..@moonetcd.default_client_config,
-      endpoints: ["127.0.0.1:18211"],
+      endpoints: ["127.0.0.1:\{port}"],
     }
     let client = Client::connect(cfg)
     let put = client.kv().put(b"greeting", b"hello", prev_kv=true)

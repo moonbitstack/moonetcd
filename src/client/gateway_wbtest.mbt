@@ -56,12 +56,12 @@ async fn serve_range(listener : @tcp.Listener) -> Unit {
 ///|
 async test "gateway transport: a reply that arrives in pieces is reassembled" {
   @async.with_task_group <| g => {
-    let listener = @tcp.listen(host="127.0.0.1", port=18212)
+    let listener = @tcp.listen(host="127.0.0.1", port=0)
+    let port = listener.addr().port()
     let _ = g.spawn(() => serve_range(listener))
-    @async.sleep(200)
     let client = Client::connect_gateway(@moonetcd.ClientConfig::{
       ..@moonetcd.default_client_config,
-      endpoints: ["127.0.0.1:18212"],
+      endpoints: ["127.0.0.1:\{port}"],
     })
     let response = client.kv().get(b"greeting")
     assert_eq(response.count, 1L)
@@ -122,13 +122,13 @@ async fn serve_watch_twice(
 ///|
 async test "gateway transport: a watch resumes from the last revision after a drop" {
   @async.with_task_group <| g => {
-    let listener = @tcp.listen(host="127.0.0.1", port=18213)
+    let listener = @tcp.listen(host="127.0.0.1", port=0)
+    let port = listener.addr().port()
     let resumed : Array[String] = []
     let _ = g.spawn(() => serve_watch_twice(listener, resumed))
-    @async.sleep(200)
     let client = Client::connect_gateway(@moonetcd.ClientConfig::{
       ..@moonetcd.default_client_config,
-      endpoints: ["127.0.0.1:18213"],
+      endpoints: ["127.0.0.1:\{port}"],
     })
     let chan = client
       .watch()
