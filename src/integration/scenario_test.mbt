@@ -342,9 +342,9 @@ async test "a role grants what it says, and a token is what lets a user in" {
   ignore(auth.user_grant_role("moonetcd-it", "moonetcd-it"))
   assert_eq(auth.user_get("moonetcd-it").roles, ["moonetcd-it"])
   ignore(auth.enable())
+  let base = live_config()
   let admin = @client.Client::connect({
-    ..@moonetcd.default_client_config,
-    endpoints: ["127.0.0.1:2379"],
+    ..base,
     username: "root",
     password: "secret",
   })
@@ -353,8 +353,7 @@ async test "a role grants what it says, and a token is what lets a user in" {
     admin.close()
   }
   let user = @client.Client::connect({
-    ..@moonetcd.default_client_config,
-    endpoints: ["127.0.0.1:2379"],
+    ..base,
     username: "moonetcd-it",
     password: "secret",
   })

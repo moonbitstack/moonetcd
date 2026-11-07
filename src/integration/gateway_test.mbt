@@ -4,16 +4,12 @@
 // wider than a JSON number, a token in the `Authorization` header — follow on their
 // own.
 //
-// Without an etcd on 2379 these return; with `MOONETCD_LIVE` set, as in CI, a missing
-// server fails them.
+// Without a member these return; with `MOONETCD_LIVE` set, as in CI, a missing server
+// fails them.
 
 ///|
 async fn gateway_connect() -> @client.Client? {
-  let config = @moonetcd.ClientConfig::{
-    ..@moonetcd.default_client_config,
-    endpoints: ["127.0.0.1:2379"],
-  }
-  let client = @client.Client::connect_gateway(config)
+  let client = @client.Client::connect_gateway(live_config())
   let up = try {
     let _ = client.maintenance().status()
     true
@@ -24,8 +20,8 @@ async fn gateway_connect() -> @client.Client? {
     Some(client)
   } else {
     client.close()
-    if @env.get_env_var("MOONETCD_LIVE") is Some(_) {
-      fail("no etcd on 2379")
+    if live_required() {
+      fail(live_missing())
     }
     None
   }
@@ -329,9 +325,9 @@ async test "gateway: a token in the authorization header is what lets a user in"
     _ => ()
   }
   ignore(auth.enable())
+  let base = live_config()
   let root = @client.Client::connect_gateway({
-    ..@moonetcd.default_client_config,
-    endpoints: ["127.0.0.1:2379"],
+    ..base,
     username: "root",
     password: "secret",
   })
@@ -340,8 +336,7 @@ async test "gateway: a token in the authorization header is what lets a user in"
     root.close()
   }
   let user = @client.Client::connect_gateway({
-    ..@moonetcd.default_client_config,
-    endpoints: ["127.0.0.1:2379"],
+    ..base,
     username: "moonetcd-gw",
     password: "secret",
   })

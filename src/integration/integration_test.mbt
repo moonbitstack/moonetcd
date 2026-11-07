@@ -1,4 +1,5 @@
-// Integration tests against a live etcd at 127.0.0.1:2379. `try_connect` probes the
+// Integration tests against a live etcd, by default at 127.0.0.1:2379 (see `live_test`).
+// `try_connect` probes the
 // member and returns `None` when nothing answers, so these tests are a no-op on a machine
 // without etcd; with `MOONETCD_LIVE` set, as in CI, a missing server fails them. Every test
 // uses its own key prefix so runs do not collide.
@@ -8,11 +9,7 @@
 
 ///|
 async fn try_connect() -> @client.Client? {
-  let cfg = @moonetcd.ClientConfig::{
-    ..@moonetcd.default_client_config,
-    endpoints: ["127.0.0.1:2379"],
-  }
-  let c = @client.Client::connect(cfg)
+  let c = @client.Client::connect(live_config())
   let up = try {
     let _ = c.maintenance().status()
     true
@@ -23,8 +20,8 @@ async fn try_connect() -> @client.Client? {
     Some(c)
   } else {
     c.close()
-    if @env.get_env_var("MOONETCD_LIVE") is Some(_) {
-      fail("no etcd on 2379")
+    if live_required() {
+      fail(live_missing())
     }
     None
   }
