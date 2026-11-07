@@ -28,6 +28,16 @@ keywords = [
   "leader-election",
   "transaction",
   "service-discovery",
+  "tls",
+  "ssl",
+  "https",
+  "mtls",
+  "mutual-tls",
+  "certificate",
+  "x509",
+  "ca",
+  "alpn",
+  "secure",
   "moonbit",
 ]
 
@@ -39,6 +49,8 @@ import {
   "moonbitstack/moonhttp@0.15.9",
   "moonbitstack/moonnet@0.1.11",
   "moonbitstack/moonbase@0.4.3",
+  "moonbitstack/mooncred@0.6.10",
+  "moonbitstack/moontls@0.9.15",
   "moonbitlang/async@0.22.5",
 }
 

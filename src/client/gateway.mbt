@@ -16,6 +16,10 @@ pub struct GatewayTransport {
   idle : Array[HttpConn]
   mut next_endpoint : Int32
   mutex : @async.Mutex
+  // What every connection dials with; `None` unless the configuration enables TLS.
+  tls : @tls.Client?
+  // The name the certificate is checked against, when the caller named one.
+  server_name : String
 }
 
 ///|
@@ -23,8 +27,17 @@ pub struct GatewayTransport {
 /// down costs a retry rather than a failed `connect`.
 fn GatewayTransport::connect(
   targets : Array[(String, Int32)],
+  tls? : @tls.Client,
+  server_name~ : String = "",
 ) -> GatewayTransport {
-  { targets, idle: [], next_endpoint: 0, mutex: @async.Mutex::Mutex(), }
+  {
+    targets,
+    idle: [],
+    next_endpoint: 0,
+    mutex: @async.Mutex::Mutex(),
+    tls,
+    server_name,
+  }
 }
 
 ///|
@@ -55,9 +68,19 @@ async fn GatewayTransport::checkout(
     Some(conn) => (conn, true)
     None => {
       let endpoint = self.dial_target()
-      (HttpConn::open(endpoint.0, endpoint.1), false)
+      (self.open(endpoint.0, endpoint.1), false)
     }
   }
+}
+
+///|
+/// A fresh connection to one endpoint, with this transport's TLS settings.
+async fn GatewayTransport::open(
+  self : GatewayTransport,
+  host : String,
+  port : Int32,
+) -> HttpConn raise EtcdError {
+  HttpConn::open(host, port, tls?=self.tls, server_name=self.server_name)
 }
 
 ///|
@@ -256,7 +279,7 @@ async fn GatewayWatchStream::open(
   metadata : Array[@header.Header],
 ) -> GatewayWatchStream raise EtcdError {
   let endpoint = transport.dial_target()
-  let conn = HttpConn::open(endpoint.0, endpoint.1)
+  let conn = transport.open(endpoint.0, endpoint.1)
   let stream = {
     transport,
     call,
@@ -350,7 +373,7 @@ async fn GatewayWatchStream::reconnect(
   self.reconnects = self.reconnects + 1
   self.conn.close()
   let endpoint = self.transport.dial_target()
-  self.conn = HttpConn::open(endpoint.0, endpoint.1)
+  self.conn = self.transport.open(endpoint.0, endpoint.1)
   self.pending = b""
   let from = if self.last_revision > 0 { self.last_revision + 1 } else { 0 }
   self.create = { ..self.create, start_revision: from, }

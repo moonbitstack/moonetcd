@@ -52,21 +52,38 @@ fn parse_endpoint(endpoint : String) -> (String, Int32) {
 ///|
 /// Dial the configured endpoints over gRPC and, if a username and password are set,
 /// authenticate and cache the token. The token travels as the `token` metadata header
-/// on every later call.
-pub async fn Client::connect(config : @moonetcd.ClientConfig) -> Client {
+/// on every later call. TLS is dialled when the configuration enables it.
+pub async fn Client::connect(
+  config : @moonetcd.ClientConfig,
+) -> Client raise EtcdError {
   let targets = config.endpoints.map(parse_endpoint)
-  let transport : &Transport = GrpcTransport::connect(targets)
-  Client::of_transport(config, transport)
+  let tls = grpc_tls(config.tls)
+  let transport : &Transport = GrpcTransport::connect(targets, tls?) catch {
+    _ => raise transport_error("grpc connect")
+  }
+  // Building the client is the authentication handshake, which reports its own failure
+  // through the token the calls carry; anything else here is a setup that did not hold.
+  Client::of_transport(config, transport) catch {
+    _ => raise transport_error("client setup")
+  }
 }
 
 ///|
 /// Reach the same endpoints through etcd's HTTP/JSON gateway, which every etcd serves
 /// on its client port. The handles are identical to the gRPC ones, down to the
 /// messages they carry; only the wire changes, with keys and values in base64.
-pub async fn Client::connect_gateway(config : @moonetcd.ClientConfig) -> Client {
+pub async fn Client::connect_gateway(
+  config : @moonetcd.ClientConfig,
+) -> Client raise EtcdError {
   let targets = config.endpoints.map(parse_endpoint)
-  let transport : &Transport = GatewayTransport::connect(targets)
-  Client::of_transport(config, transport)
+  let transport : &Transport = GatewayTransport::connect(
+    targets,
+    tls?=gateway_tls(config.tls),
+    server_name=config.tls.server_name,
+  )
+  Client::of_transport(config, transport) catch {
+    _ => raise transport_error("client setup")
+  }
 }
 
 ///|

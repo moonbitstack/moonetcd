@@ -9,14 +9,17 @@
 pub struct GrpcTransport {
   channel : @net.ManagedChannel
   targets : Array[(String, Int32)]
+  // What every connection dials with; `None` unless the configuration enables TLS.
+  tls : @tls.Client?
 }
 
 ///|
 /// Dial the endpoints. Nothing is sent until the first call.
 pub async fn GrpcTransport::connect(
   targets : Array[(String, Int32)],
+  tls? : @tls.Client,
 ) -> GrpcTransport {
-  { channel: @net.ManagedChannel::connect(targets), targets, }
+  { channel: @net.ManagedChannel::connect(targets, tls?), targets, tls, }
 }
 
 ///|
@@ -86,7 +89,7 @@ impl Transport for GrpcTransport with fn watch(
   group~ : @async.TaskGroup[Unit],
 ) -> &WatchStream raise EtcdError {
   let endpoint = self.endpoint_at(0)
-  let mux = @net.MuxChannel::connect(endpoint.0, endpoint.1) catch {
+  let mux = @net.MuxChannel::connect(endpoint.0, endpoint.1, tls?=self.tls) catch {
     _ => raise transport_error("watch dial")
   }
   group.spawn_bg(no_wait=true, () => mux.read_pump())
@@ -115,7 +118,7 @@ impl Transport for GrpcTransport with fn keep_alive(
   group~ : @async.TaskGroup[Unit],
 ) -> &KeepAliveStream raise EtcdError {
   let endpoint = self.endpoint_at(0)
-  let mux = @net.MuxChannel::connect(endpoint.0, endpoint.1) catch {
+  let mux = @net.MuxChannel::connect(endpoint.0, endpoint.1, tls?=self.tls) catch {
     _ => raise transport_error("keepalive dial")
   }
   group.spawn_bg(no_wait=true, () => mux.read_pump())
@@ -204,7 +207,11 @@ async fn GrpcWatchStream::reconnect(
   self.mux.close()
   self.endpoint = self.endpoint + 1
   let address = self.transport.endpoint_at(self.endpoint)
-  let mux = @net.MuxChannel::connect(address.0, address.1) catch {
+  let mux = @net.MuxChannel::connect(
+    address.0,
+    address.1,
+    tls?=self.transport.tls,
+  ) catch {
     _ => raise transport_error("watch reconnect dial")
   }
   self.group.spawn_bg(no_wait=true, () => mux.read_pump())

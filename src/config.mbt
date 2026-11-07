@@ -1,11 +1,13 @@
 // Client configuration. The record is pure data so it lives in the all-targets
-// root; the native transport reads it when it dials. TLS is present so callers can
-// set it today, but moonrpc's transport is h2c for now (see the delivery notes),
-// so `tls.enabled` is honoured only once TLS reaches the transport.
+// root; the native transports read it when they dial.
 
 ///|
-/// TLS settings for a connection. `enabled` is honoured by the client only once the
-/// transport carries TLS; the record is present so callers can configure it now.
+/// TLS settings for a connection. With `enabled` the transports dial TLS: `ca_cert` is
+/// what they trust, `cert` and `key` are the client's own certificate for a member that
+/// asks for one, and `server_name` is the name the member's certificate has to carry.
+///
+/// Empty `ca_cert` means the public roots. Empty `server_name` means the endpoint's own
+/// host, which is what a certificate issued for the address it is reached by says.
 #derive(Eq)
 pub(all) struct TlsConfig {
   enabled : Bool
@@ -19,6 +21,7 @@ pub(all) struct TlsConfig {
 pub extend TlsConfig with Eq::{not_equal, equal}
 
 ///|
+/// The preset: no TLS.
 pub let default_tls : TlsConfig = {
   enabled: false,
   ca_cert: b"",
@@ -28,9 +31,9 @@ pub let default_tls : TlsConfig = {
 }
 
 ///|
-/// How a client reaches etcd: the endpoints to dial, the credentials to
-/// authenticate with, timeouts, and TLS. Only `endpoints` is required; everything
-/// else has a safe default.
+/// How a client reaches etcd: the endpoints to dial, the credentials to authenticate
+/// with, timeouts, and TLS. Only `endpoints` is required; everything else has a safe
+/// default.
 #derive(Eq)
 pub(all) struct ClientConfig {
   endpoints : Array[String]
@@ -46,8 +49,7 @@ pub(all) struct ClientConfig {
 pub extend ClientConfig with Eq::{not_equal, equal}
 
 ///|
-/// The preset every `connect` falls back to: a five-second dial timeout, no auth,
-/// no TLS.
+/// The preset every `connect` falls back to: a five-second dial timeout, no auth, no TLS.
 pub let default_client_config : ClientConfig = {
   endpoints: [],
   username: "",

@@ -13,13 +13,42 @@ pub struct HttpConn {
 }
 
 ///|
-/// Dial `host:port` and start an HTTP/1.1 client on it.
+/// Dial `host:port` and start an HTTP/1.1 client on it. With `tls` the socket is
+/// upgraded before the first request; `server_name` is the name the certificate is
+/// checked against and the one the handshake offers, the address dialled when unset.
 pub async fn HttpConn::open(
   host : String,
   port : Int32,
+  tls? : @tls.Client,
+  server_name? : String,
 ) -> HttpConn raise EtcdError {
   let socket = @tcp.dial(host, port~) catch {
     _ => raise transport_error("gateway dial " + host + ":" + port.to_string())
+  }
+  let socket = match tls {
+    None => socket
+    Some(client) => {
+      let name = match server_name {
+        Some(named) => if named == "" { host } else { named }
+        None => host
+      }
+      let upgraded = socket.upgrade(client, name) catch {
+        _ => {
+          socket.close()
+          raise transport_error(
+            "gateway tls handshake " + host + ":" + port.to_string(),
+          )
+        }
+      }
+      // etcd's gateway is HTTP/1.1, and its secure port would have spoken HTTP/2 had
+      // the handshake agreed to it; a connection that did is not one to write a
+      // request line on.
+      if upgraded.alpn() == Some(@net.alpn_h2) {
+        upgraded.close()
+        raise transport_error("gateway tls settled on " + @net.alpn_h2)
+      }
+      upgraded
+    }
   }
   {
     socket,
