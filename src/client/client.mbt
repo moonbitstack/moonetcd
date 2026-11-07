@@ -79,7 +79,6 @@ pub async fn Client::connect_gateway(
   let transport : &Transport = GatewayTransport::connect(
     targets,
     tls?=gateway_tls(config.tls),
-    server_name=config.tls.server_name,
   )
   Client::of_transport(config, transport) catch {
     _ => raise transport_error("client setup")

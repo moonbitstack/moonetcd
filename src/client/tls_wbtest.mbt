@@ -201,11 +201,14 @@ async fn serve_gateway(listener : @tcp.Listener, count : Int32) -> Unit {
 }
 
 ///|
-/// An HTTP/1.1 server over TLS with `cert`, on a port the system chose.
+/// An HTTP/1.1 server over TLS with `cert`, on a port the system chose. It names `h2` and
+/// nothing else, as etcd's own listener does: a client that offers `http/1.1` is refused
+/// (RFC 7301 §3.2), and one that offers no protocol at all is served HTTP/1.1.
 async fn tls_gateway_server(cert : String) -> (@tcp.Listener, Int32) {
   let serving = @tls.Server::new(
     [@x509.pem(cert)],
     @x509.PrivateKey::pem(server_key),
+    alpn=[@net.alpn_h2],
   )
   let listener = @tcp.listen(host="127.0.0.1", port=0, tls=serving)
   (listener, listener.addr().port())

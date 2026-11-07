@@ -127,10 +127,10 @@ gateway names no protocol at all — etcd's TLS listener offers `h2` alone, so a
 offers `http/1.1` is turned away (RFC 7301 §3.2) and one that offers nothing is served
 HTTP/1.1. Both of those are the library's business, not the caller's.
 
-`server_name` is checked against the member's certificate; the gRPC transport still names the
-endpoint it dials in the handshake, so a member reached by address and certified by name is
-verified by the name and dialled by the address. A certificate, an anchor or a key that does
-not parse is refused at `connect` with `UNAUTHENTICATED` rather than at the first call.
+`server_name` is what the member's certificate is judged against, on both transports; the
+handshake names the endpoint that was dialled, so a member reached by address and certified by
+name is verified by the name and dialled by the address. A certificate, an anchor or a key that
+does not parse is refused at `connect` with `UNAUTHENTICATED` rather than at the first call.
 
 A member started with `--client-cert-auth` reaches its own gateway through the server
 certificate, so that certificate needs to be valid for client authentication too, or the

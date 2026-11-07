@@ -18,8 +18,6 @@ pub struct GatewayTransport {
   mutex : @async.Mutex
   // What every connection dials with; `None` unless the configuration enables TLS.
   tls : @tls.Client?
-  // The name the certificate is checked against, when the caller named one.
-  server_name : String
 }
 
 ///|
@@ -28,16 +26,8 @@ pub struct GatewayTransport {
 fn GatewayTransport::connect(
   targets : Array[(String, Int32)],
   tls? : @tls.Client,
-  server_name~ : String = "",
 ) -> GatewayTransport {
-  {
-    targets,
-    idle: [],
-    next_endpoint: 0,
-    mutex: @async.Mutex::Mutex(),
-    tls,
-    server_name,
-  }
+  { targets, idle: [], next_endpoint: 0, mutex: @async.Mutex::Mutex(), tls, }
 }
 
 ///|
@@ -80,7 +70,7 @@ async fn GatewayTransport::open(
   host : String,
   port : Int32,
 ) -> HttpConn raise EtcdError {
-  HttpConn::open(host, port, tls?=self.tls, server_name=self.server_name)
+  HttpConn::open(host, port, tls?=self.tls)
 }
 
 ///|
