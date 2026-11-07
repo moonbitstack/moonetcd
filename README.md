@@ -5,7 +5,8 @@ An etcd v3 client for MoonBit — the feature surface of etcd's official Go clie
 
 `moonetcd` speaks the etcd v3 API (`etcdserverpb`, `mvccpb`, `v3lock`, `v3election`)
 over gRPC on HTTP/2 via [`moonrpc`](https://github.com/moonbitstack/moonrpc), or over
-etcd's HTTP/JSON gateway, which every etcd serves on the same port. It gives you the
+etcd's HTTP/JSON gateway, which every etcd serves on the same port, in the clear or over
+TLS. It gives you the
 whole client either way: key-value reads and writes, transactions, watches that
 survive a dropped connection, leases and keep-alives, cluster and auth
 administration, maintenance, and the client-side `concurrency` helpers (sessions,
@@ -33,7 +34,7 @@ moon add moonbitstack/moonetcd
 
 ## Quick start
 
-```moonbit
+```mbt native
 async fn main {
   let config = @moonetcd.ClientConfig::{
     ..@moonetcd.default_client_config,
@@ -56,8 +57,11 @@ Lease KeepAlive opens its own multiplexed connection so it can reconnect on its 
 
 The same program over etcd's HTTP/JSON gateway differs in one line:
 
-```moonbit
-let client = @client.Client::connect_gateway(config)
+```mbt native
+let client = @client.Client::connect_gateway(@moonetcd.ClientConfig::{
+  ..@moonetcd.default_client_config,
+  endpoints: ["127.0.0.1:2379"],
+})
 ```
 
 ## Two transports
@@ -99,6 +103,42 @@ call, one server-streaming call, a watch and a keep-alive session, and `close`) 
 hand it to `Client::of_transport`. The handles are written against that trait and
 change nowhere else.
 
+## TLS
+
+Both transports dial TLS when the configuration asks for it. `ca_cert` is what the member's
+certificate has to chain to — a PEM bundle, one DER certificate, or empty for the public roots;
+`cert` and `key` are the client's own certificate and key, for a member that asks for one;
+`server_name` is the name its certificate has to carry, the endpoint's own host when empty.
+
+```mbt native
+async fn secure(config : @moonetcd.ClientConfig, ca : Bytes) -> @client.Client {
+  @client.Client::connect({
+    ..config,
+    tls: @moonetcd.TlsConfig::{ ..@moonetcd.default_tls, enabled: true, ca_cert: ca },
+  })
+}
+```
+
+The same fields go to `Client::connect_gateway`; nothing else about the client changes.
+
+The two transports speak different protocols on that one port, and the handshake is what tells
+them apart: gRPC names `h2` and refuses a connection that settled on anything else, while the
+gateway names no protocol at all — etcd's TLS listener offers `h2` alone, so a client that
+offers `http/1.1` is turned away (RFC 7301 §3.2) and one that offers nothing is served
+HTTP/1.1. Both of those are the library's business, not the caller's.
+
+`server_name` is checked against the member's certificate; the gRPC transport still names the
+endpoint it dials in the handshake, so a member reached by address and certified by name is
+verified by the name and dialled by the address. A certificate, an anchor or a key that does
+not parse is refused at `connect` with `UNAUTHENTICATED` rather than at the first call.
+
+A member started with `--client-cert-auth` reaches its own gateway through the server
+certificate, so that certificate needs to be valid for client authentication too, or the
+gateway half of a mutual-TLS member answers with a handshake failure.
+
+`@client.grpc_tls` and `@client.gateway_tls` build those two handshakes for a caller plugging
+its own transport into `Client::of_transport`.
+
 ## API surface
 
 `Client` hands out one typed handle per etcd service.
@@ -128,7 +168,7 @@ the create with `start_revision` set just past the last event it saw, so no even
 lost. A `WatchResponse` with a non-zero `compact_revision` means the requested
 revision was compacted; check it on the response.
 
-```moonbit
+```mbt native
 @async.with_task_group <| g => {
   let chan = client.watch().watch_create(
     g,
@@ -216,10 +256,13 @@ session.close()                                         // revokes the lease
 
 `moonetcd/sd` implements the `moonsd` contract on etcd. An endpoint is a key on a lease, so it goes when the lease does, and a watcher follows etcd's revisions. A watch that compaction or a dropped connection ends costs one more read.
 
-```moonbit
-let registry = @sd.Registry::new(client)
-group.spawn_bg(() => @moonsd.hold(registry, "greeter", @moonsd.Endpoint::new("10.0.0.1", 12000)))
-let endpoints = registry.resolve("greeter")
+```mbt native
+async fn announced(client : @client.Client, group : @async.TaskGroup[Unit]) -> Unit {
+  let registry = @sd.Registry::new(client)
+  group.spawn_bg(() => @moonsd.hold(registry, "greeter", @moonsd.Endpoint::new("10.0.0.1", 12000)))
+  let endpoints = registry.resolve("greeter")
+  println("\{endpoints.length()} instance(s)")
+}
 ```
 
 `Registry::new` takes `prefix`, default `/moonsd`. A lease lasts whole seconds, and the server sets a minimum, so a short `ttl` is rounded up. Any number of tasks may share one registry and its client.
@@ -248,7 +291,7 @@ to compaction or a future revision without scraping text.
 | `token` | a pre-existing auth token to reuse. |
 | `dial_timeout_millis` | connection timeout. |
 | `keep_alive_millis` | HTTP/2 keep-alive interval. |
-| `tls` | TLS settings (see the note below). |
+| `tls` | TLS settings: `enabled`, `ca_cert`, `cert`, `key`, `server_name`. |
 
 Multiple endpoints are load-balanced and failed over by the underlying channel. When a member
 dies under a call, a read goes again on the next member; a write answers `UNAVAILABLE`, since
@@ -295,11 +338,31 @@ starts three members, and with `MOONETCD_MEMBERS` naming it the suite kills one 
 under plain calls. Without a server the tests return early; with `MOONETCD_LIVE` set, as in CI,
 a missing server fails them.
 
+The same suite runs over TLS, and the whole of it — both transports — is what the certificates
+have to let through. `scripts/etcd_tls.sh` starts a member with a certificate the suite is
+given; `MOONETCD_ENDPOINT` moves the suite to it, and `MOONETCD_CA` is the anchor that signed
+it. `MOONETCD_CERT` and `MOONETCD_KEY` add a client certificate for every call, `MOONETCD_SERVER_NAME`
+names what the certificate has to carry, and a member that asks for a client certificate is
+reached through `MOONETCD_MTLS_ENDPOINT`, `MOONETCD_MTLS_CERT` and `MOONETCD_MTLS_KEY`.
+
+```sh
+bash scripts/etcd_tls.sh up /tmp/etcd-tls 23379
+bash scripts/etcd_tls.sh up /tmp/etcd-mtls 23380 --client-cert-auth --certs /tmp/etcd-tls/certs
+MOONETCD_LIVE=1 MOONETCD_ENDPOINT=127.0.0.1:23379 MOONETCD_CA=/tmp/etcd-tls/certs/ca.crt \
+  MOONETCD_MTLS_ENDPOINT=127.0.0.1:23380 \
+  MOONETCD_MTLS_CERT=/tmp/etcd-tls/certs/client.crt \
+  MOONETCD_MTLS_KEY=/tmp/etcd-tls/certs/client.key \
+  moon test --target native
+```
+
+The loopback tests bring their own certificates, written by `scripts/gen_certs.py` into
+`src/client/fixtures_wbtest.mbt`: a root, two server certificates under it that differ in what
+they name, and a client certificate. They start a gRPC server and an HTTP/1.1 one on a port the
+system chose, so the suite can run side by side with itself.
+
 ## Notes
 
-- The transport is h2c (HTTP/2 over plaintext) through `moonrpc`. The `TlsConfig`
-  fields are present so callers can configure TLS, but they are honoured only once
-  TLS reaches the transport.
+- TLS is off unless `TlsConfig::enabled` is set, and then both transports dial it.
 - `Maintenance::snapshot()` buffers the whole stream; a very large snapshot is held in
   memory.
 - Watch and Lease KeepAlive use a pull model (`next()` returns one response at a
