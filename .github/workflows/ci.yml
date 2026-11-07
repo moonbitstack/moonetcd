@@ -47,9 +47,9 @@ jobs:
           moon info --target all
           git diff --exit-code
 
-  # Integration: a real etcd, first as a single node, then as a three-node cluster,
-  # with the client tests and every example driven against 127.0.0.1:2379. Every case
-  # runs over gRPC and over the HTTP/JSON gateway, and the answers are compared.
+  # Integration: a real etcd, first as a single node, then again over TLS, then as a
+  # three-node cluster, with the client tests and every example driven against it. Every
+  # case runs over gRPC and over the HTTP/JSON gateway, and the answers are compared.
   integration:
     runs-on: ubuntu-26.04
     steps:
@@ -94,6 +94,24 @@ jobs:
           MOONETCD_LIVE: "1"
         run: moon test --target native
 
+      - name: Members over TLS, and one that asks for a client certificate
+        run: |
+          bash scripts/etcd_tls.sh up /tmp/etcd-tls 23379
+          bash scripts/etcd_tls.sh up /tmp/etcd-mtls 23380 --client-cert-auth \
+            --certs /tmp/etcd-tls/certs
+
+      # The same cases, both transports, over TLS: the CA is the only thing that lets the
+      # client in, and the member on 23380 is reached with a client certificate.
+      - name: Integration tests (TLS, both transports)
+        env:
+          MOONETCD_LIVE: "1"
+          MOONETCD_ENDPOINT: 127.0.0.1:23379
+          MOONETCD_CA: /tmp/etcd-tls/certs/ca.crt
+          MOONETCD_MTLS_ENDPOINT: 127.0.0.1:23380
+          MOONETCD_MTLS_CERT: /tmp/etcd-tls/certs/client.crt
+          MOONETCD_MTLS_KEY: /tmp/etcd-tls/certs/client.key
+        run: moon test --target native
+
       - name: Examples (single node)
         run: |
           for ex in 00-connect 01-kv 02-watch 03-lease 04-txn 05-lock 06-gateway; do
@@ -101,9 +119,12 @@ jobs:
             moon run --target native "src/examples/$ex"
           done
 
-      - name: Stop single node
+      - name: Stop the single node and the TLS members
         run: |
           pkill -f 'etcd-single' || true
+          bash scripts/etcd_tls.sh down /tmp/etcd-tls
+          bash scripts/etcd_tls.sh down /tmp/etcd-mtls
+          pkill -f 'etcd-tls' || true
           sleep 2
 
       - name: Three-node etcd cluster
